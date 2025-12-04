@@ -4,7 +4,6 @@ const http = require("http");
 const cors = require("cors");
 const session = require("express-session");
 const MongoStore = require("connect-mongo");
-const WebSocket = require("ws");
 require("dotenv").config({ path: "./config.env" });
 const port = process.env.PORT;
 
@@ -38,7 +37,6 @@ app.use(
 
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const dbo = require("./db/conn");
-const { json } = require("stream/consumers");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
