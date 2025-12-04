@@ -6,7 +6,7 @@ export default function Welcome() {
   // vars and states
   const navigate = useNavigate();
   const [errorMessage, setErrorMessage] = useState("");
-  cosnt[(playerName, setPlayerName)] - useState("");
+  const [playerName, setPlayerName] = useState("");
 
   // function triggered by user submit
   async function onSubmit(e) {

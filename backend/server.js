@@ -42,7 +42,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ----- routes -----
-app.use(require("./routes/game"));
 app.use(dashboardRoutes);
 
 // connect websocket.js

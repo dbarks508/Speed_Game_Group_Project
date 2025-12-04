@@ -1,89 +1,71 @@
 import React, { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router"; 
+import { useNavigate } from "react-router";
+import { useLocation } from "react-router-dom";
 import "./styles.css";
 
 export default function Waiting() {
-  const [dots, setDots] = useState(".");
+  const [dots, setDots] = useState("");
   const [message, setMessage] = useState([]);
   let intevalRef = useRef(null);
+
   const navigate = useNavigate();
-  const [player, setPlayer] = useState("");
-  const [word, setWord] = useState("");
+  const location = useLocation();
+  const playerName = location.state?.playerName;
 
   // use effect
   useEffect(() => {
-    let websocket;
-    // get session data
-    async function verify() {
-      const response = await fetch(`http://localhost:4000/verify`, {
-        method: "GET",
-        credentials: "include",
-      });
+    // connect websocket
+    const websocket = new WebSocket("ws://localhost:4000");
 
-      const data = await response.json();
+    // web socket open
+    websocket.onopen = () => {
+      console.log("connected to websocket on front end");
 
-      if (data.status === "no session set") {
-        navigate("/");
-        return;
-      }
-
-      setPlayer(data.player);
-      setWord(data.word);
-
-      // connect websocket
-      websocket = new WebSocket("ws://localhost:4000");
-
-      // web socket open
-      websocket.onopen = () => {
-        console.log("connected to websocket on front end");
-
-        // get player data and sent
-        const gameState = {
-          type: "join",
-          player: data.player,
-          word: data.word,
-        };
-
-        websocket.send(JSON.stringify(gameState));
-        intevalRef.current = setInterval(() => {
-          setDots((prev) => moveDots(prev));
-        }, 800);
+      // get player data and sent
+      const gameState = {
+        type: "join",
+        playerName: playerName,
       };
 
-      // set messages as they come in
-      websocket.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          setMessage((prevMessage) => [...prevMessage, data.message]);
+      websocket.send(JSON.stringify(gameState));
 
-          // two players have been added
-          if (data.action === "hangman") {
-            // clear dots interval
-            clearInterval(intevalRef.current);
+      // dots display
+      intevalRef.current = setInterval(() => {
+        setDots((prev) => moveDots(prev));
+      }, 800);
+    };
 
-            // nav to hangman
-            setTimeout(() => {
-              navigate("/hangman");
-            }, 3000);
-          }
-        } catch (err) {
-          console.log("error parsing data");
+    // set messages as they come in
+    websocket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        setMessage((prevMessage) => [...prevMessage, data.message]);
+
+        // two players have been added
+        if (data.action === "speed") {
+          // clear dots interval
+          clearInterval(intevalRef.current);
+
+          // nav to hangman
+          setTimeout(() => {
+            navigate("/speed");
+          }, 3000);
         }
-      };
+      } catch (err) {
+        console.log("error parsing data", err);
+      }
+    };
 
-      websocket.onclose = () => {
-        console.log("Disconnected from WebSocket server");
-      };
-    }
-
-    verify();
+    websocket.onclose = () => {
+      console.log("Disconnected from WebSocket server");
+    };
 
     return () => {
       if (websocket && websocket.readyState === WebSocket.OPEN) {
         websocket.close();
       }
     };
-  }, []);
+  }, [playerName, navigate]);
 
   function moveDots(d) {
     if (d === "") return ".";

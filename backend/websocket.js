@@ -38,7 +38,7 @@ function websocket(server) {
             if (connectedPlayers.length == 2) {
               ws.send(
                 JSON.stringify({
-                  action: "startGame",
+                  action: "speed",
                   connectedPlayers: connectedPlayers.map((p) => ({
                     player: p.player,
                   })),
