@@ -1,0 +1,22 @@
+# Node modules
+node_modules/
+
+# Dependency folders
+venv/
+.env
+.env.*
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Build/Dist
+dist/
+build/
+.DS_Store
+
+# IDE/editor crap
+.vscode/
+.idea/

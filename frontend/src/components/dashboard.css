@@ -1,0 +1,78 @@
+/* Used last project as inspiration for this design again */
+
+.background {
+    background-color: #111827;
+    color: #ffffff;
+    min-height: 100vh;
+}
+
+.container {
+    width: 100%;
+    max-width: 80rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 2rem;
+}
+
+.header {
+    margin-bottom: 2.5rem;
+    font-size: 2rem;
+    font-weight: 700;
+    text-align: center;
+    color: #ffffff;
+}
+
+.dashboard-content {
+    background-color: #1f2937;
+    padding: 1.5rem;
+}
+
+/* Table Layout */
+.table-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.table-header-row {
+    display: grid;
+    grid-template-columns: 0.5fr 1.5fr 2fr 1fr 1fr 1fr;
+    padding: 1rem;
+    background-color: #374151;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.05em;
+    color: #d1d5db;
+}
+
+.table-row {
+    display: grid;
+    grid-template-columns: 0.5fr 1.5fr 2fr 1fr 1fr 1fr;
+    align-items: center;
+    padding: 1rem;
+    background-color: #4b5563;
+    border-bottom: 1px solid #374151;
+}
+
+/* Column Styles */
+.col {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-right: 1rem;
+}
+
+.text-right {
+    text-align: right;
+}
+
+.font-bold {
+    font-weight: 600;
+}
+
+.font-large {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
+}
