@@ -1,13 +1,9 @@
 const WebSocket = require("ws");
 const dbo = require("./db/conn");
 
-const players = [];
-const guesses = [];
-let wordToGuess = "";
-let displayWord = "";
+const connectedPlayers = [];
 
-let hasSwapped = false;
-
+// main web socket function
 function websocket(server) {
   const wss = new WebSocket.Server({ server });
 
@@ -32,27 +28,21 @@ function websocket(server) {
 
         // state type joing sent from waiting room
         if (data.type === "join") {
-          const existing = players.find((p) => p.player === data.player);
+          const existing = connectedPlayers.find(
+            (p) => p.player === data.player
+          );
           if (existing) {
             existing.ws = ws;
             console.log("player reconnected");
 
-            // set word to ensure it is sent
-            if (data.word && !wordToGuess) {
-              wordToGuess = data.word;
-              displayWord = "_".repeat(wordToGuess.length);
-              console.log("word set on reconnect: " + wordToGuess);
-            }
-
             // send current game state to player
-            if (players.length == 2) {
+            if (connectedPlayers.length == 2) {
               ws.send(
                 JSON.stringify({
-                  action: "hangman",
-                  wordToGuess: wordToGuess,
-                  displayWord: displayWord,
-                  guesses: guesses,
-                  players: players.map((p) => ({ player: p.player, role: p.role })),
+                  action: "startGame",
+                  connectedPlayers: connectedPlayers.map((p) => ({
+                    player: p.player,
+                  })),
                 })
               );
             }
@@ -60,7 +50,7 @@ function websocket(server) {
             return;
           }
 
-          if (players.length == 0) {
+          if (connectedPlayers.length == 0) {
             // set word on host join
             if (data.word) {
               wordToGuess = data.word;
@@ -73,7 +63,7 @@ function websocket(server) {
               role: "host",
               ws: ws,
             };
-            players.push(playerObject);
+            connectedPlayers.push(playerObject);
             console.log("player added, host set");
             wss.broadcast(
               JSON.stringify({
@@ -81,15 +71,18 @@ function websocket(server) {
                 action: "wait",
               })
             );
-          } else if (data.player != players[0].player && players.length < 2) {
+          } else if (
+            data.player != connectedPlayers[0].player &&
+            connectedPlayers.length < 2
+          ) {
             const playerObject = {
               player: data.player,
               role: "guesser",
               ws: ws,
             };
-            players.push(playerObject);
+            connectedPlayers.push(playerObject);
             console.log("player added, guesser set");
-            
+
             wss.broadcast(
               JSON.stringify({
                 message: `${data.player} has joined as guesser`,
@@ -97,10 +90,16 @@ function websocket(server) {
                 wordToGuess: wordToGuess,
                 displayWord: displayWord,
                 guesses: guesses,
-                players: players.map((p) => ({ player: p.player, role: p.role })),
+                connectedPlayers: connectedPlayers.map((p) => ({
+                  player: p.player,
+                  role: p.role,
+                })),
               })
             );
-            console.log("Guessing: " + wordToGuess, " | Display: " + displayWord);
+            console.log(
+              "Guessing: " + wordToGuess,
+              " | Display: " + displayWord
+            );
           }
 
           // save guessed words TODO
@@ -114,26 +113,26 @@ function websocket(server) {
             return;
           }
 
-          if (players.length == 2) {
-            const temp = players[0].role;
-            players[0].role = players[1].role;
-            players[1].role = temp;
+          if (connectedPlayers.length == 2) {
+            const temp = connectedPlayers[0].role;
+            connectedPlayers[0].role = connectedPlayers[1].role;
+            connectedPlayers[1].role = temp;
             console.log("roles swapped");
 
             // get word from the new host
-            const newHost = players.find((p) => p.role === "host");
+            const newHost = connectedPlayers.find((p) => p.role === "host");
             console.log("new host: " + newHost.player);
             console.log("Word from host: " + data.word);
 
             // set guess list, display word, word to guess for new host
             guesses.length = 0;
-            
+
             // if word is provided use it, otherwise til new word is sent from client
-            if(data.word && data.word.length > 0){
+            if (data.word && data.word.length > 0) {
               wordToGuess = data.word;
               displayWord = "_".repeat(wordToGuess.length);
               console.log("new word set: " + wordToGuess);
-            } else{
+            } else {
               wordToGuess = "";
               displayWord = "";
               console.log("waiting for new word from host...");
@@ -143,13 +142,20 @@ function websocket(server) {
 
             wss.broadcast(
               JSON.stringify({
-                message: `Roles have been swapped! New host: ${players.find((p) => p.role === "host").player}, New guesser: ${players.find((p) => p.role === "guesser").player}`,
+                message: `Roles have been swapped! New host: ${
+                  connectedPlayers.find((p) => p.role === "host").player
+                }, New guesser: ${
+                  connectedPlayers.find((p) => p.role === "guesser").player
+                }`,
                 action: "hangman",
                 type: "swapped",
                 wordToGuess: wordToGuess,
                 displayWord: displayWord,
                 guesses: guesses,
-                players: players.map((p) => ({ player: p.player, role: p.role })),
+                connectedPlayers: connectedPlayers.map((p) => ({
+                  player: p.player,
+                  role: p.role,
+                })),
                 hasSwapped: true,
               })
             );
@@ -170,7 +176,10 @@ function websocket(server) {
                 wordToGuess: wordToGuess,
                 displayWord: displayWord,
                 guesses: guesses,
-                players: players.map((p) => ({ player: p.player, role: p.role })),
+                connectedPlayers: connectedPlayers.map((p) => ({
+                  player: p.player,
+                  role: p.role,
+                })),
                 hasSwapped: hasSwapped,
               })
             );
@@ -200,8 +209,7 @@ function websocket(server) {
                 newDisplayWord += wordToGuess[i];
               } else if (displayWord[i] !== "_") {
                 newDisplayWord += displayWord[i];
-              }
-              else {
+              } else {
                 newDisplayWord += "_";
               }
             }
@@ -227,14 +235,18 @@ function websocket(server) {
                     successfulOrNot: "successful",
                   };
                   const result = await gameCollection.insertOne(newGameRecord);
-                  console.log("Game record inserted with _id: ", result.insertedId);
+                  console.log(
+                    "Game record inserted with _id: ",
+                    result.insertedId
+                  );
                 } catch (err) {
                   console.error("Error inserting game record: ", err);
                 }
               })();
-            }
-            else if (guesses.length >= 6) {
-              console.log("Max guesses reached! Logging game result to database...");
+            } else if (guesses.length >= 6) {
+              console.log(
+                "Max guesses reached! Logging game result to database..."
+              );
               (async () => {
                 try {
                   let db = dbo.getDB();
@@ -248,7 +260,10 @@ function websocket(server) {
                     successfulOrNot: "unsuccessful",
                   };
                   const result = await gameCollection.insertOne(newGameRecord);
-                  console.log("Game record inserted with _id: ", result.insertedId);
+                  console.log(
+                    "Game record inserted with _id: ",
+                    result.insertedId
+                  );
                 } catch (err) {
                   console.error("Error inserting game record: ", err);
                 }
@@ -259,17 +274,18 @@ function websocket(server) {
             if (wordComplete && hasSwapped) {
               console.log("Word guessed! Game over.");
 
-              
-
               wss.broadcast(
                 JSON.stringify({
                   type: "end",
                   action: "end",
                   message: `The word "${wordToGuess}" has been guessed! Game over.`,
                   wordToGuess: wordToGuess,
-                  displayWord: displayWord,  // Send the complete word
+                  displayWord: displayWord, // Send the complete word
                   guesses: guesses,
-                  players: players.map((p) => ({ player: p.player, role: p.role })),
+                  connectedPlayers: connectedPlayers.map((p) => ({
+                    player: p.player,
+                    role: p.role,
+                  })),
                 })
               );
               return;
@@ -279,16 +295,14 @@ function websocket(server) {
 
             wss.broadcast(
               JSON.stringify({
-                type:"update",
+                type: "update",
                 message: `${data.player} guessed: ${g}`,
                 guesses: guesses,
                 wordToGuess: wordToGuess,
                 displayWord: displayWord,
               })
             );
-
           }
-
         }
       } catch (err) {
         console.log("message error: ", err.message);
