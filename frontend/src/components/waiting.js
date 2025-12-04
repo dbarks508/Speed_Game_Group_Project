@@ -24,7 +24,7 @@ export default function Waiting() {
       // get player data and sent
       const gameState = {
         type: "join",
-        playerName: playerName,
+        player: playerName,
       };
 
       websocket.send(JSON.stringify(gameState));

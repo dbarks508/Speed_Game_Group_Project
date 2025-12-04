@@ -33,20 +33,20 @@ function websocket(server) {
           if (existing) {
             existing.ws = ws;
             console.log("player reconnected");
+          } else {
+            connectedPlayers.push({ player: data.player, ws: ws });
+          }
 
-            // send current game state to player
-            if (connectedPlayers.length == 2) {
-              ws.send(
-                JSON.stringify({
-                  action: "speed",
-                  connectedPlayers: connectedPlayers.map((p) => ({
-                    player: p.player,
-                  })),
-                })
-              );
-            }
-
-            return;
+          // send current game state to player
+          if (connectedPlayers.length == 2) {
+            ws.send(
+              JSON.stringify({
+                action: "speed",
+                connectedPlayers: connectedPlayers.map((p) => ({
+                  player: p.player,
+                })),
+              })
+            );
           }
         }
       } catch (err) {
