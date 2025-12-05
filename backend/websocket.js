@@ -54,6 +54,16 @@ function websocket(server) {
       }
     });
 
+    wss.on("start", (gameState) => {
+      // send start game state to all connected players
+      wss.broadcast(
+        JSON.stringify({
+          action: "speed",
+          gameState: gameState, // front end needs to initialize game visual state
+        })
+      );
+    });
+
     // handle player actions, such as playing a card
     wss.on("playerAction", (gameState) => {
       // compare the current card to the stack being played on
@@ -63,12 +73,17 @@ function websocket(server) {
         console.log("valid play, card played to stack");
          // update the played stack top card
         gameState.playedStack.topCard = gameState.playedCard;
+
         
         // send updated game state to all connected players
         wss.broadcast(
           JSON.stringify({
-            action: "updateGameState",
+            action: "update",
             gameState: gameState, // front end needs to update game visual state
+            playerName: gameState.playerName,
+            playedCard: gameState.playedCard,
+            playedStack: gameState.playedStack,
+            
           })
         );
 
