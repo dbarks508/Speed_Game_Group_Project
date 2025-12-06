@@ -1,6 +1,6 @@
 import {useState} from "react";
 
-const SUITS = ["clubs", "diamonds", "hearts", "spades"]
+const SUITS = ["clubs", "diamonds", "hearts", "spades"];
 
 function number_to_card_face(num){
 	if(num == 1) return "ace";
@@ -13,11 +13,12 @@ function number_to_card_face(num){
 	}
 }
 
+function CardHelper({src, ...props}){
+	return (<img className="card" src={src} {...props}/>);
+}
 
-function PileComponent({cards, filterDrop, isDragable}){
+function PileComponent({cards, revealed, filterDrop, isDragable}){
 	var [cards, setCards] = useState(cards ?? []);
-
-	// TODO: enable an 'opaque' option where the backside is shown and we make a callback to get the next item (the callback should send a message to the server)
 
 	return (
 		<span
@@ -39,11 +40,12 @@ function PileComponent({cards, filterDrop, isDragable}){
 				}
 			}}
 		>
-		{cards.length == 0 ?
-			(<img className="card" onDragStart={(e) => e.preventDefault()} src="cards/blank.svg"/>):
+		{
+			cards.length == 0 ?(<CardHelper src="cards/blank.svg" onDragStart={(e) => e.preventDefault()}/>):
 			(
 				<CardComponent
 					{...cards.at(-1)}
+					revealed={revealed}
 					isDragable={isDragable}
 
 					onDrop={(e) => {
@@ -59,8 +61,9 @@ function PileComponent({cards, filterDrop, isDragable}){
 	);
 }
 
-function CardComponent({suit, number, isDragable, onDrop}){
+function CardComponent({suit, number, revealed, isDragable, onDrop}){
 	isDragable = isDragable ?? true;
+	revealed = revealed ?? true;
 
 	// TODO: only call onDrop on a 'successful' drop
 
@@ -69,8 +72,8 @@ function CardComponent({suit, number, isDragable, onDrop}){
 	}
 
 	return (
-		<img
-			className="card"
+		<CardHelper
+			src={revealed ? `cards/${number_to_card_face(number)}_of_${suit}.svg`:"cards/back.svg"}
 
 			onDragStart={(e) => {
 				if(isDragable){
@@ -80,8 +83,6 @@ function CardComponent({suit, number, isDragable, onDrop}){
 				}
 			}}
 			onDragEnd={onDrop}
-
-			src={`cards/${number_to_card_face(number)}_of_${suit}.svg`}
 		/>
 	);
 }
