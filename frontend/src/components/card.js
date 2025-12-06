@@ -22,6 +22,8 @@ function PileComponent({cards, revealed, filterDrop, isDragable}){
 
 	return (
 		<span
+			className="pile"
+
 			onDrop={(e) => {
 				let data = JSON.parse(e.dataTransfer.getData("json"));
 
@@ -65,8 +67,6 @@ function CardComponent({suit, number, revealed, isDragable, onDrop}){
 	isDragable = isDragable ?? true;
 	revealed = revealed ?? true;
 
-	// TODO: only call onDrop on a 'successful' drop
-
 	if(!SUITS.includes(suit)){
 		throw Error(`invalid suit '${suit}'`);
 	}
@@ -82,7 +82,11 @@ function CardComponent({suit, number, revealed, isDragable, onDrop}){
 					e.preventDefault();
 				}
 			}}
-			onDragEnd={onDrop}
+			onDragEnd={(e) => {
+				if(e.dataTransfer.dropEffect !== "move") return;
+
+				if(onDrop) onDrop(e);
+			}}
 		/>
 	);
 }
