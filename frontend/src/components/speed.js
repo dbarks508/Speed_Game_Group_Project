@@ -7,37 +7,28 @@ export default function Speed() {
   const [ws, setWs] = useState(null);
   const [data, setData] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
-  const [displayWord, setDisplayWord] = useState("");
-  const [guesses, setGuesses] = useState([]);
   const [players, setPlayers] = useState([]);
   const [form, setForm] = useState({
     guess: "",
   });
 
-  const [guessCounter, setGuessCounter] = useState(0);
-  const [maxGuesses] = useState(7);
-
-  const [hasSwapped, setHasSwapped] = useState(false);
+  const [player1Hand, setPlayer1Hand] = useState([]);
+  const [player2Hand, setPlayer2Hand] = useState([]);
+  const [playedStacks, setPlayedStacks] = useState({
+    stack1: { topCard: null },
+    stack2: { topCard: null },
+  });
+  const [player1Deck, setPlayer1Deck] = useState([]);
+  const [player2Deck, setPlayer2Deck] = useState([]);
+  const [sideStacks, setSideStacks] = useState({
+    stack1: [],
+    stack2: [],
+  });
 
   // use effect
   useEffect(() => {
     // verify the session
     async function verify() {
-      const response = await fetch(`http://localhost:4000/verify`, {
-        method: "GET",
-        credentials: "include",
-      });
-
-      const res = await response.json();
-      console.log(res);
-
-      if (res.status === "no session set") {
-        navigate("/");
-        return;
-      }
-
-      setData(res);
-
       // connect websocket
       const websocket = new WebSocket("ws://localhost:4000");
 
@@ -45,13 +36,8 @@ export default function Speed() {
       websocket.onopen = () => {
         console.log("connected to websocket on front end");
         // get player data and sent
-        const gameState = {
-          type: "start",
-          player: res.player,
-          word: res.word,
-        };
 
-        websocket.send(JSON.stringify(gameState));
+        websocket.send(JSON.stringify({ type: "start", gameState: gameState }));
       };
 
       // handle message
@@ -60,15 +46,11 @@ export default function Speed() {
           const msg = JSON.parse(event.data);
           console.log("Websocket message: " + JSON.stringify(msg));
           // start game
-          if (msg.action === "hangman") {
-            setDisplayWord(msg.displayWord);
-            setGuesses(msg.guesses || []);
-            setPlayers(msg.players || []);
-
-            // prevent multiple swaps and proper score screen navigation
-            if (msg.hasSwapped !== undefined) {
-              setHasSwapped(msg.hasSwapped);
-            }
+          if (msg.action === "speed") {
+            setPlayers(msg.connectedPlayers);
+            // randomly create and assign player hands, sideStacks, and decks
+            // use helper function to initialize game state
+            /// TO DO: implement game state initialization
           }
 
           // end the game if end game msg is sent
@@ -82,67 +64,54 @@ export default function Speed() {
 
           // handle game actions
           if (msg.type === "update") {
-            setDisplayWord(msg.displayWord);
-            setGuesses(msg.guesses);
+            setPlayer1Hand(msg.player1Hand);
+            setPlayer2Hand(msg.player2Hand);
+            setPlayedStacks(msg.playedStacks);
+            setPlayer1Deck(msg.player1Deck);
+            setPlayer2Deck(msg.player2Deck);
+            setSideStacks(msg.sideStacks);
+
+            // remove the card from the player's hand and add to played stack
+            playedPlayer = msg.player;
+            playedCard = msg.playedCard;
+
+            if (playedPlayer === players[0].player) {
+              setPlayer1Hand((prevHand) =>
+                prevHand.filter((card) => card.id !== playedCard.id)
+              );
+            } else if (playedPlayer === players[1].player) {
+              setPlayer2Hand((prevHand) =>
+                prevHand.filter((card) => card.id !== playedCard.id)
+              );
+            }
+
+            // set the top card fo the played stack to the played card
+            setPlayedStacks((prevStacks) => {
+              const updatedStacks = { ...prevStacks };
+              if (msg.playedStack === "stack1") {
+                updatedStacks.stack1.topCard = playedCard;
+              } else if (msg.playedStack === "stack2") {
+                updatedStacks.stack2.topCard = playedCard;
+              }
+              return updatedStacks;
+            });
 
             // check for a win, only go to score page after players have swapped roles
-            if (
-              msg.displayWord.indexOf("_") === -1 ||
-              msg.guesses.length >= maxGuesses
-            ) {
-              // navigate to scores if roles were swapped earlier
-              if (hasSwapped) {
-                console.log("Word guessed! Navigating to scores...");
-                setTimeout(() => {
-                  navigate("/dashboard");
-                }, 5000);
-              }
-              // otherwise play second round
-              else {
-                console.log("Word guessed, waiting for role swap...");
-                // swap after word is guessed or max guesses reached
-                if (
-                  (msg.displayWord.indexOf("_") === -1 ||
-                    msg.guesses.length >= maxGuesses) &&
-                  !hasSwapped
-                ) {
-                  console.log("Swapping roles...");
-                  // swap roles
-                  const swapData = {
-                    type: "swap",
-                    player: res.player,
-                    word: res.word,
-                  };
-                  websocket.send(JSON.stringify(swapData));
-                  setHasSwapped(true);
-
-                  setGuessCounter(0);
-                }
-              }
+            if (player1Deck.length === 0 && player1Hand.length === 0) {
+              console.log("Player 1 wins!");
+              setTimeout(() => {
+                navigate("/dashboard");
+              }, 5000);
             }
-          }
-
-          if (msg.type === "swapped") {
-            console.log("Swapped roles...");
-            setDisplayWord(msg.displayWord);
-            setGuesses(msg.guesses || []);
-            setPlayers(msg.players || []);
-            setHasSwapped(true);
-            setGuessCounter(0);
-
-            await postScores();
-
-            // check if this client is the new host of the game, send their word if so
-            const currPlayer = msg.players.find((p) => p.player === res.player);
-            if (currPlayer && currPlayer.role === "host") {
-              console.log("Sending new word to server as the new host...");
-              const startData = {
-                type: "start",
-                player: res.player,
-                word: res.word,
-              };
-              websocket.send(JSON.stringify(startData));
+            if (player2Deck.length === 0 && player2Hand.length === 0) {
+              console.log("Player 2 wins!");
+              setTimeout(() => {
+                navigate("/dashboard");
+              }, 5000);
             }
+
+            // if no players can make a valid move, play a card from the side stacks into the played stacks
+            // TO DO: implement logic to check for valid moves and play from side stacks
           }
 
           // handle errors
