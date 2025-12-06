@@ -28,23 +28,26 @@ export default function Speed() {
 
   // use effect
   useEffect(() => {
-    if (ws) return;
-
     const websocket = new WebSocket("ws://localhost:4000");
     setWs(websocket);
 
     websocket.onopen = () => {
-      console.log("Connected to websocket");
+      console.log("speed.js connected");
+
+      websocket.send(JSON.stringify({ type: "start" }));
     };
 
     // handle message
     websocket.onmessage = async (event) => {
+      console.log("RAW message:", event.data);
+
       try {
         const msg = JSON.parse(event.data);
         console.log("Websocket message: " + JSON.stringify(msg));
         // start game
         if (msg.action === "speed") {
-          setPlayers(msg.connectedPlayers);
+          //   console.log("connectedPlayers from server:", msg.connectedPlayers);
+          //   setPlayers(msg.connectedPlayers);
           // randomly create and assign player hands, sideStacks, and decks
           // use helper function to initialize game state
           /// TO DO: implement game state initialization
@@ -57,7 +60,7 @@ export default function Speed() {
           }
           const shuffledDeck = shuffle(deck);
 
-          console.log(JSON.stringify(msg.gameState));
+          console.log("in msg.action == speed");
         }
 
         // end the game if end game msg is sent
@@ -138,7 +141,7 @@ export default function Speed() {
       if (websocket && websocket.readyState === WebSocket.OPEN)
         websocket.close();
     };
-  }, [navigate]);
+  }, []);
 
   function shuffle(arr) {
     for (let i = arr.length - 1; i > 0; i--) {

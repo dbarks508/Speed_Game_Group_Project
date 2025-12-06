@@ -59,7 +59,6 @@ function websocket(server) {
                   JSON.stringify({
                     action: "speed",
                     connectedPlayers: connectedPlayers,
-                    gameState: gameState,
                   })
                 );
               }

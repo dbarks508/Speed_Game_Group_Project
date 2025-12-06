@@ -57,7 +57,7 @@ export default function Waiting() {
     };
 
     websocket.onclose = () => {
-      console.log("Disconnected from WebSocket server");
+      console.log("Disconnected from WebSocket server in waiting.js");
     };
 
     return () => {
@@ -65,7 +65,7 @@ export default function Waiting() {
         websocket.close();
       }
     };
-  }, [playerName, navigate]);
+  }, []);
 
   function moveDots(d) {
     if (d === "") return ".";
