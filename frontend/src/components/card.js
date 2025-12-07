@@ -66,8 +66,8 @@ function PileComponent({cards, revealed, filterDrop, isDragable}){
 }
 
 function CardComponent({suit, number, revealed, isDragable, onDrop}){
-	isDragable = isDragable ?? true;
-	revealed = revealed ?? true;
+	isDragable = isDragable ?? false;
+	revealed = revealed ?? false;
 
 	if(revealed && !SUITS.includes(suit)){
 		throw Error(`invalid suit '${suit}'`);
