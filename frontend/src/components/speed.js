@@ -8,11 +8,9 @@ export default function Speed() {
   const [data, setData] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [players, setPlayers] = useState([]);
-  const [form, setForm] = useState({
-    guess: "",
-  });
-
   const [ws, setWs] = useState(null);
+  const [playedCard, setPlayedCard] = useState(null);
+  const [playedPlayer, setPlayedPlayer] = useState(null);
   const [player1Hand, setPlayer1Hand] = useState([]);
   const [player2Hand, setPlayer2Hand] = useState([]);
   const [playedStacks, setPlayedStacks] = useState({
@@ -39,15 +37,13 @@ export default function Speed() {
 
     // handle message
     websocket.onmessage = async (event) => {
-      console.log("RAW message:", event.data);
-
       try {
         const msg = JSON.parse(event.data);
         console.log("Websocket message: " + JSON.stringify(msg));
         // start game
         if (msg.action === "speed") {
-          //   console.log("connectedPlayers from server:", msg.connectedPlayers);
-          //   setPlayers(msg.connectedPlayers);
+          console.log("connectedPlayers from server:", msg.connectedPlayers);
+          setPlayers(msg.connectedPlayers);
           // randomly create and assign player hands, sideStacks, and decks
           // use helper function to initialize game state
           /// TO DO: implement game state initialization
@@ -58,9 +54,12 @@ export default function Speed() {
               deck.push({ suit: s, number: i });
             }
           }
-          const shuffledDeck = shuffle(deck);
 
-          console.log("in msg.action == speed");
+          const shuffledDeck = shuffle(deck);
+          dealCards(shuffledDeck);
+          console.log("cards dealt");
+
+          sendGameStateToServer(websocket);
         }
 
         // end the game if end game msg is sent
@@ -72,56 +71,56 @@ export default function Speed() {
         }
 
         // handle game actions
-        // if (msg.type === "update") {
-        //   setPlayer1Hand(msg.player1Hand);
-        //   setPlayer2Hand(msg.player2Hand);
-        //   setPlayedStacks(msg.playedStacks);
-        //   setPlayer1Deck(msg.player1Deck);
-        //   setPlayer2Deck(msg.player2Deck);
-        //   setSideStacks(msg.sideStacks);
+        if (msg.type === "update") {
+          setPlayer1Hand(msg.player1Hand);
+          setPlayer2Hand(msg.player2Hand);
+          setPlayedStacks(msg.playedStacks);
+          setPlayer1Deck(msg.player1Deck);
+          setPlayer2Deck(msg.player2Deck);
+          setSideStacks(msg.sideStacks);
 
-        //   // remove the card from the player's hand and add to played stack
-        //   playedPlayer = msg.player;
-        //   playedCard = msg.playedCard;
+          // remove the card from the player's hand and add to played stack
+          playedPlayer = msg.player;
+          playedCard = msg.playedCard;
 
-        //   if (playedPlayer === players[0].player) {
-        //     setPlayer1Hand((prevHand) =>
-        //       prevHand.filter((card) => card.id !== playedCard.id)
-        //     );
-        //   } else if (playedPlayer === players[1].player) {
-        //     setPlayer2Hand((prevHand) =>
-        //       prevHand.filter((card) => card.id !== playedCard.id)
-        //     );
-        //   }
+          if (playedPlayer === players[0].player) {
+            setPlayer1Hand((prevHand) =>
+              prevHand.filter((card) => card.id !== playedCard.id)
+            );
+          } else if (playedPlayer === players[1].player) {
+            setPlayer2Hand((prevHand) =>
+              prevHand.filter((card) => card.id !== playedCard.id)
+            );
+          }
 
-        //   // set the top card fo the played stack to the played card
-        //   setPlayedStacks((prevStacks) => {
-        //     const updatedStacks = { ...prevStacks };
-        //     if (msg.playedStack === "stack1") {
-        //       updatedStacks.stack1.topCard = playedCard;
-        //     } else if (msg.playedStack === "stack2") {
-        //       updatedStacks.stack2.topCard = playedCard;
-        //     }
-        //     return updatedStacks;
-        //   });
+          // set the top card fo the played stack to the played card
+          setPlayedStacks((prevStacks) => {
+            const updatedStacks = { ...prevStacks };
+            if (msg.playedStack === "stack1") {
+              updatedStacks.stack1.topCard = playedCard;
+            } else if (msg.playedStack === "stack2") {
+              updatedStacks.stack2.topCard = playedCard;
+            }
+            return updatedStacks;
+          });
 
-        //   // check for a win, only go to score page after players have swapped roles
-        //   if (player1Deck.length === 0 && player1Hand.length === 0) {
-        //     console.log("Player 1 wins!");
-        //     setTimeout(() => {
-        //       navigate("/dashboard");
-        //     }, 5000);
-        //   }
-        //   if (player2Deck.length === 0 && player2Hand.length === 0) {
-        //     console.log("Player 2 wins!");
-        //     setTimeout(() => {
-        //       navigate("/dashboard");
-        //     }, 5000);
-        //   }
+          // check for a win, only go to score page after players have swapped roles
+          if (player1Deck.length === 0 && player1Hand.length === 0) {
+            console.log("Player 1 wins!");
+            setTimeout(() => {
+              navigate("/dashboard");
+            }, 5000);
+          }
+          if (player2Deck.length === 0 && player2Hand.length === 0) {
+            console.log("Player 2 wins!");
+            setTimeout(() => {
+              navigate("/dashboard");
+            }, 5000);
+          }
 
-        // if no players can make a valid move, play a card from the side stacks into the played stacks
-        // TO DO: implement logic to check for valid moves and play from side stacks
-        //}
+          //if no players can make a valid move, play a card from the side stacks into the played stacks
+          //TO DO: implement logic to check for valid moves and play from side stacks
+        }
 
         // handle errors
         if (msg.error) {
@@ -142,6 +141,69 @@ export default function Speed() {
         websocket.close();
     };
   }, []);
+
+  function dealCards(shuffledDeck) {
+    let cards = [];
+
+    for (let i = 0; i < 5; i++) {
+      const [card] = shuffledDeck.splice(0, 1);
+      cards.push(card);
+    }
+    setPlayer1Hand(cards);
+
+    cards = [];
+    for (let i = 0; i < 5; i++) {
+      const [card] = shuffledDeck.splice(0, 1);
+      cards.push(card);
+    }
+    setPlayer2Hand(cards);
+
+    cards = [];
+    for (let i = 0; i < 15; i++) {
+      const [card] = shuffledDeck.splice(0, 1);
+      cards.push(card);
+    }
+    setPlayer1Deck(cards);
+
+    cards = [];
+    for (let i = 0; i < 15; i++) {
+      const [card] = shuffledDeck.splice(0, 1);
+      cards.push(card);
+    }
+    setPlayer2Deck(cards);
+
+    let stack1 = [];
+    let stack2 = [];
+    for (let i = 0; i < 10; i++) {
+      const [card1] = shuffledDeck.splice(0, 1);
+      const [card2] = shuffledDeck.splice(0, 1);
+      stack1.push(card1);
+      stack2.push(card2);
+    }
+    setSideStacks({
+      stack1,
+      stack2,
+    });
+  }
+
+  function sendGameStateToServer(socket) {
+    console.log("in send game state");
+    const gameState = {
+      players,
+      player1Hand,
+      player2Hand,
+      player1Deck,
+      player2Deck,
+      sideStacks,
+    };
+
+    socket.send(
+      JSON.stringify({
+        type: "initializeGame",
+        gameState: gameState,
+      })
+    );
+  }
 
   function shuffle(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
@@ -167,9 +229,9 @@ export default function Speed() {
       return;
     }
 
-    return setForm((prevJsonObj) => {
-      return { ...prevJsonObj, ...jsonObj };
-    });
+    //     return setForm((prevJsonObj) => {
+    //       return { ...prevJsonObj, ...jsonObj };
+    //     });
   }
 
   // use if necesssary
@@ -177,8 +239,8 @@ export default function Speed() {
   //     const stats = {
   //       userID: "todo",
   //       Name: players[0],
-  //       phraseGuessed: displayWord,
-  //       numberOfGuesses: guesses,
+  //       phraseGuessed: "",
+  //       numberOfGuesses: 0,
   //       fromDatabaseOrCustom: "todo",
   //       successfulOrNot: "todo",
   //     };
