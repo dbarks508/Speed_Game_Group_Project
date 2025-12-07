@@ -276,39 +276,45 @@ export default function Speed() {
   let hands = [player1Hand, player2Hand];
 
   return (<div className="speed-body">
+    {/* first column */}
     <div style={{display: "flex", alignItems: "flex-end"}}>
       <div className="deck">
         <p>{decks[0].length} cards remaining</p>
-        <PileComponent filterDrop={() => false} cards={decks[0]} isDragable={true} revealed={true}/>
+        <PileComponent filterDrop={() => false} cards={decks[0]}/>
       </div>
     </div>
 
+    {/* middle column */}
     <div style={{display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "center"}}>
+      {/* first row */}
       <div className="hand">
         {hands[1].map((_, i) => <CardComponent key={i}/>)}
       </div>
 
+      {/* middle row */}
       <div>
-        <PileComponent filterDrop={() => false} cards={sideStacks.stack1}/>
+        <PileComponent filterDrop={() => false} cards={sideStacks?.stack1}/>
         <PileComponent
           filterDrop={(suit, number) => discardCard(playedStacks?.stack1, suit, number)}
           revealed={true}
           cards={playedStacks?.stack1?.topCard == undefined ? []:[playedStacks.stack1.topCard]}
-          />
+        />
 
-        <PileComponent filterDrop={() => false} cards={sideStacks.stack2}/>
+        <PileComponent filterDrop={() => false} cards={sideStacks?.stack2}/>
         <PileComponent
           filterDrop={(suit, number) => discardCard(playedStacks?.stack2, suit, number)}
           revealed={true}
           cards={playedStacks?.stack2?.topCard == undefined ? []:[playedStacks.stack2.topCard]}
-          />
+        />
       </div>
 
+      {/* last row */}
       <div className="hand">
         {hands[0].map((c, i) => <CardComponent key={i} suit={c.suit} number={c.number} revealed={true} isDragable={true}/>)}
       </div>
     </div>
 
+    {/* last column */}
     <div>
       <div className="deck">
         {decks[1].length > 0 ? <CardComponent/>:<PileComponent/>}
