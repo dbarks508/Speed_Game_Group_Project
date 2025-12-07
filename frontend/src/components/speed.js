@@ -257,5 +257,79 @@ export default function Speed() {
   //     }
   //   }
 
-  return <div className="body"></div>;
+
+  // TODO: when a card is dragged, call sendGameStateToServer() then send a websocket message for "playerAction" to process play
+  // probably when an onDragEnd or onDrop whatever event gets triggered by releasing the card
+  return <div className="body">
+    <h2>Speed Game</h2>
+    <div className="game-area">
+      <div className="player-area">
+        <h3>Player 1 Hand</h3>
+        <div className="hand">
+          {player1Hand.map((card, index) => (
+            <CardComponent key={index} suit={card.suit} number={card.number} />
+          ))}
+        </div>
+        <h3>Player 1 Deck: {player1Deck.length} cards left</h3>
+      </div>
+      <div className="side-stack-area"> 
+
+      </div>
+      <div className="played-stacks-area">
+        <h3>Played Stacks</h3>
+          <div className="side-stacks">
+            <div className="side-stack">
+              {sideStacks.stack1.length > 0 ? (
+                <CardComponent
+                  suit={sideStacks.stack1[0].suit}
+                  number={sideStacks.stack1[0].number}
+                />
+              ) : (<p>Empty</p>
+              )}
+          </div>
+        <div className="played-stacks">
+          <div className="played-stack">
+            {playedStacks.stack1.topCard ? (
+              <CardComponent
+                suit={playedStacks.stack1.topCard.suit}
+                number={playedStacks.stack1.topCard.number}
+              />
+            ) : (<p>Empty</p>
+            )}
+          </div>
+          <div className="played-stack">
+            {playedStacks.stack2.topCard ? (
+              <CardComponent
+                suit={playedStacks.stack2.topCard.suit}
+                number={playedStacks.stack2.topCard.number}
+              />
+            ) : (<p>Empty</p>
+            )}
+          </div>
+          <div className="side-stacks">
+            <div className="side-stack">
+              {sideStacks.stack2.length > 0 ? (
+                <CardComponent
+                  suit={sideStacks.stack2[0].suit}
+                  number={sideStacks.stack2[0].number}
+                />
+              ) : (<p>Empty</p>
+              )}
+          </div>
+        </div>
+
+      </div>
+      <div className="player-area">
+        <h3>Player 2 Hand</h3>
+        <div className="hand">
+          {player2Hand.map((card, index) => (
+            <CardComponent key={index} suit={card.suit} number={card.number} />
+          ))}
+        </div>
+        <h3>Player 2 Deck: {player2Deck.length} cards left</h3>
+      </div>
+    </div>
+    </div>
+    </div>
+  </div>;
 }
