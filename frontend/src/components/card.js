@@ -2,7 +2,7 @@ import {useState} from "react";
 
 const SUITS = ["clubs", "diamonds", "hearts", "spades"];
 
-function number_to_card_face(num){
+function numberToFace(num){
 	if(num == 1) return "ace";
 	else if(num > 1 && num <= 10) return num.toString();
 	else if(num == 11) return "jack";
@@ -25,8 +25,6 @@ function PileComponent({cards, revealed, filterDrop, isDragable}){
 			className="pile"
 
 			onDrop={(e) => {
-				// deprecate this? fairly certain that `cards` will always be a useState in the parent...
-
 				let data = JSON.parse(e.dataTransfer.getData("json"));
 
 				if(data.suit != undefined && data.number != undefined){
@@ -75,12 +73,12 @@ function CardComponent({suit, number, revealed, isDragable, onDrop}){
 
 	return (
 		<CardHelper
-			src={revealed ? `cards/${number_to_card_face(number)}_of_${suit}.svg`:"cards/back.svg"}
+			src={revealed ? `cards/${numberToFace(number)}_of_${suit}.svg`:"cards/back.svg"}
 
 			onDragStart={(e) => {
 				let abort = false;
 				try{
-					number_to_card_face(number);
+					numberToFace(number);
 					if(!SUITS.includes(suit)) throw Error();
 				}catch{
 					abort = true;
