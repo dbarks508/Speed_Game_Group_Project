@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import "./styles.css";
-import { CardComponent } from "./card";
+import { CardComponent, PileComponent } from "./card";
 
 export default function Speed() {
   const navigate = useNavigate();
@@ -257,5 +257,63 @@ export default function Speed() {
   //     }
   //   }
 
-  return <div className="body"></div>;
+
+
+  function discardCard(stack, suit, number){
+    if(Math.abs(number - stack?.topCard?.number) !== 1) return false;
+
+    // TODO: send message to server about the card played
+
+    stack.topCard = {suit, number};
+    setPlayedStacks({...playedStacks});
+
+    return true;
+  }
+
+  // NOTE: it is assumed that the client is always player1
+  //       if this is not the case, simply reverse the arrays below when needed
+  let decks = [player1Deck, player2Deck];
+  let hands = [player1Hand, player2Hand];
+
+  return (<div className="speed-body">
+    <div style={{display: "flex", alignItems: "flex-end"}}>
+      <div className="deck">
+        <p>{decks[0].length} cards remaining</p>
+        <PileComponent filterDrop={() => false} cards={decks[0]} isDragable={true} revealed={true}/>
+      </div>
+    </div>
+
+    <div style={{display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "center"}}>
+      <div className="hand">
+        {hands[1].map((_, i) => <CardComponent key={i}/>)}
+      </div>
+
+      <div>
+        <PileComponent filterDrop={() => false} cards={sideStacks.stack1}/>
+        <PileComponent
+          filterDrop={(suit, number) => discardCard(playedStacks?.stack1, suit, number)}
+          revealed={true}
+          cards={playedStacks?.stack1?.topCard == undefined ? []:[playedStacks.stack1.topCard]}
+          />
+
+        <PileComponent filterDrop={() => false} cards={sideStacks.stack2}/>
+        <PileComponent
+          filterDrop={(suit, number) => discardCard(playedStacks?.stack2, suit, number)}
+          revealed={true}
+          cards={playedStacks?.stack2?.topCard == undefined ? []:[playedStacks.stack2.topCard]}
+          />
+      </div>
+
+      <div className="hand">
+        {hands[0].map((c, i) => <CardComponent key={i} suit={c.suit} number={c.number} revealed={true} isDragable={true}/>)}
+      </div>
+    </div>
+
+    <div>
+      <div className="deck">
+        {decks[1].length > 0 ? <CardComponent/>:<PileComponent/>}
+        <p>{decks[1].length} cards remaining</p>
+      </div>
+    </div>
+  </div>);
 }

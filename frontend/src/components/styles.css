@@ -1,12 +1,49 @@
-.body{
+body{
+	margin: 0;
+
+	overflow-y: hidden;
+
     background-color: #111827;
     color: #ffffff;
-    min-height: 100vh;
 
     font: 16px 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 
-    margin: 0;
     padding: 2rem;
+	height: calc(100vh - 4rem);
+}
+#root>div{
+	height: 100%;
+}
+#root{
+	height: 100%;
+}
+
+.body{
+	height: 100%;
+}
+
+.speed-body{
+	height: 100%;
+
+	display: flex;
+	justify-content: space-between;
+}
+
+.hand{
+	display: flex;
+	justify-content: center;
+}
+.deck{
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+}
+
+.card{
+	height: 20vh;
+
+	user-select: none;
 }
 
 .background{
@@ -68,6 +105,3 @@
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
 }
 
-.guessDisplay{
-    letter-spacing: 0.4em;
-}
