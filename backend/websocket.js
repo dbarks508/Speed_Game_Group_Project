@@ -8,6 +8,8 @@ const gameState = {
   sidePiles: [],
   stacks: [],
   currentTurn: 0,
+  playedCard: null, // track the card being played for UI update
+  playedStack: null, // assign whatever stack the player dragged onto for UI update
 };
 
 // main web socket function
@@ -47,6 +49,7 @@ function websocket(server) {
               player: data.player,
               hand: [],
               pile: [],
+              deck: [],
             });
           }
 
@@ -67,6 +70,24 @@ function websocket(server) {
         }
 
         if (data.type === "start") {
+          // create and shuffle a deck
+          const SUITS = ["clubs", "diamonds", "hearts", "spades"];
+          const deck = [];
+          for (let s of SUITS) {
+            for (let i = 1; i < 14; i++) {
+              deck.push({ suit: s, number: i });
+            }
+          }
+          const shuffledDeck = shuffle(deck);
+
+          // initialize player hands, side piles, and decks
+          // math might be wrong??? need to double check
+          for (let i = 0; i < gameState.players.length; i++) {
+            gameState.players[i].hand = shuffledDeck.slice(i * 5, i * 5 + 5);
+            gameState.players[i].pile = shuffledDeck.slice(i * 5 + 5, i * 5 + 15);
+            gameState.players[i].deck = shuffledDeck.slice(i * 15);
+          }
+
           // send start game state to all connected players
           wss.broadcast(
             JSON.stringify({
