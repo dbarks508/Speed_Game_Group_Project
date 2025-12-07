@@ -25,6 +25,8 @@ function PileComponent({cards, revealed, filterDrop, isDragable}){
 			className="pile"
 
 			onDrop={(e) => {
+				// deprecate this? fairly certain that `cards` will always be a useState in the parent...
+
 				let data = JSON.parse(e.dataTransfer.getData("json"));
 
 				if(data.suit != undefined && data.number != undefined){
@@ -67,7 +69,7 @@ function CardComponent({suit, number, revealed, isDragable, onDrop}){
 	isDragable = isDragable ?? true;
 	revealed = revealed ?? true;
 
-	if(!SUITS.includes(suit)){
+	if(revealed && !SUITS.includes(suit)){
 		throw Error(`invalid suit '${suit}'`);
 	}
 
@@ -76,7 +78,16 @@ function CardComponent({suit, number, revealed, isDragable, onDrop}){
 			src={revealed ? `cards/${number_to_card_face(number)}_of_${suit}.svg`:"cards/back.svg"}
 
 			onDragStart={(e) => {
-				if(isDragable){
+				let abort = false;
+				try{
+					number_to_card_face(number);
+					if(!SUITS.includes(suit)) throw Error();
+				}catch{
+					abort = true;
+					console.warn(`unable to drag a card when {suit: ${suit}, number: ${number}}. (maybe 'isDraggable' needs to be set to false?)`);
+				}
+
+				if(isDragable && !abort){
 					e.dataTransfer.setData("json", JSON.stringify({suit, number}));
 				}else{
 					e.preventDefault();
