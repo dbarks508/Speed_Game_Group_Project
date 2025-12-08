@@ -123,12 +123,9 @@ export default function Speed() {
         }
 
         // prvents the card from being played and returns it to hand
-        if (msg.type === "badPlay"){
-          if (msg.playerName === players[0].playerName){
-              
-          }
-          else if (msg.playerName === players[1].playerName){
-
+        if (msg.type === "badPlay") {
+          if (msg.playerName === players[0].playerName) {
+          } else if (msg.playerName === players[1].playerName) {
           }
         }
 
@@ -151,6 +148,31 @@ export default function Speed() {
         websocket.close();
     };
   }, []);
+
+  // use effect to call send game state
+  useEffect(() => {
+    if (
+      players.length === 2 &&
+      player1Hand.length > 0 &&
+      player2Hand.length > 0 &&
+      player1Deck.length > 0 &&
+      player2Deck.length > 0 &&
+      sideStacks.stack1.length > 0 &&
+      sideStacks.stack2.length > 0
+    ) {
+      console.log("sending over game state");
+      sendGameStateToServer(ws, init);
+      setInit(false);
+    }
+  }, [
+    players,
+    player1Hand,
+    player2Hand,
+    player1Deck,
+    player2Deck,
+    sideStacks,
+    ws,
+  ]);
 
   function dealCards(shuffledDeck) {
     let cards = [];
@@ -207,12 +229,21 @@ export default function Speed() {
       sideStacks,
     };
 
-    socket.send(
-      JSON.stringify({
-        type: "initializeGame",
-        gameState: gameState,
-      })
-    );
+    if (init) {
+      socket.send(
+        JSON.stringify({
+          type: "initializeGame",
+          gameState: gameState,
+        })
+      );
+    } else {
+      socket.send(
+        JSON.stringify({
+          type: "playerAction",
+          gameState: gameState,
+        })
+      );
+    }
   }
 
   function shuffle(arr) {
@@ -267,26 +298,25 @@ export default function Speed() {
   //     }
   //   }
 
-
-
-
   // NOTE: it is assumed that the client is always player1
   //       if this is not the case, simply reverse the arrays below when needed
   let decks = [player1Deck, player2Deck];
   let hands = [player1Hand, player2Hand];
 
-  function validateDrop(stack){
+  function validateDrop(stack) {
     return (suit, number) => Math.abs(number - stack?.topCard?.number) === 1;
   }
-  function onDiscard(stack){
+  function onDiscard(stack) {
     return (suit, number) => {
-      let index = hands[0].findIndex(({suit: s, number: n}) => s == suit && n == number);
-      if(!validateDrop(stack)(suit, number)) return;
+      let index = hands[0].findIndex(
+        ({ suit: s, number: n }) => s == suit && n == number
+      );
+      if (!validateDrop(stack)(suit, number)) return;
 
       // TODO: send message to server about the card played
 
-      stack.topCard = {suit, number};
-      setPlayedStacks({...playedStacks});
+      stack.topCard = { suit, number };
+      setPlayedStacks({ ...playedStacks });
 
       hands[0].splice(index, 1);
       setPlayer1Hand(player1Hand.slice());
@@ -294,18 +324,20 @@ export default function Speed() {
     };
   }
 
-  function validateDrop(stack){
+  function validateDrop(stack) {
     return (suit, number) => Math.abs(number - stack?.topCard?.number) === 1;
   }
-  function onDiscard(stack){
+  function onDiscard(stack) {
     return (suit, number) => {
-      let index = hands[0].findIndex(({suit: s, number: n}) => s == suit && n == number);
-      if(!validateDrop(stack)(suit, number)) return;
+      let index = hands[0].findIndex(
+        ({ suit: s, number: n }) => s == suit && n == number
+      );
+      if (!validateDrop(stack)(suit, number)) return;
 
       // TODO: send message to server about the card played
 
-      stack.topCard = {suit, number};
-      setPlayedStacks({...playedStacks});
+      stack.topCard = { suit, number };
+      setPlayedStacks({ ...playedStacks });
 
       hands[0].splice(index, 1);
       setPlayer1Hand(player1Hand.slice());
@@ -323,44 +355,70 @@ export default function Speed() {
         </div>
       </div>
 
-    {/* middle column */}
-    <div style={{display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "center"}}>
-      {/* first row */}
-      <div className="hand">
-        {hands[1].map((_, i) => <CardComponent key={i}/>)}
+      {/* middle column */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        {/* first row */}
+        <div className="hand">
+          {hands[1].map((_, i) => (
+            <CardComponent key={i} />
+          ))}
+        </div>
+
+        {/* middle row */}
+        <div>
+          <PileComponent filterDrop={() => false} cards={sideStacks?.stack1} />
+          <PileComponent
+            filterDrop={validateDrop(playedStacks?.stack1)}
+            onDrop={onDiscard(playedStacks?.stack1)}
+            revealed={true}
+            cards={
+              playedStacks?.stack1?.topCard == undefined
+                ? []
+                : [playedStacks.stack1.topCard]
+            }
+          />
+
+          <PileComponent
+            filterDrop={validateDrop(playedStacks?.stack2)}
+            onDrop={onDiscard(playedStacks?.stack2)}
+            revealed={true}
+            cards={
+              playedStacks?.stack2?.topCard == undefined
+                ? []
+                : [playedStacks.stack2.topCard]
+            }
+          />
+          <PileComponent filterDrop={() => false} cards={sideStacks?.stack2} />
+        </div>
+
+        {/* last row */}
+        <div className="hand">
+          {hands[0].map((c, i) => (
+            <CardComponent
+              key={i}
+              suit={c.suit}
+              number={c.number}
+              revealed={true}
+              isDragable={true}
+            />
+          ))}
+        </div>
       </div>
 
-      {/* middle row */}
+      {/* last column */}
       <div>
-        <PileComponent filterDrop={() => false} cards={sideStacks?.stack1}/>
-        <PileComponent
-          filterDrop={validateDrop(playedStacks?.stack1)}
-          onDrop={onDiscard(playedStacks?.stack1)}
-          revealed={true}
-          cards={playedStacks?.stack1?.topCard == undefined ? []:[playedStacks.stack1.topCard]}
-        />
-
-        <PileComponent
-          filterDrop={validateDrop(playedStacks?.stack2)}
-          onDrop={onDiscard(playedStacks?.stack2)}
-          revealed={true}
-          cards={playedStacks?.stack2?.topCard == undefined ? []:[playedStacks.stack2.topCard]}
-        />
-        <PileComponent filterDrop={() => false} cards={sideStacks?.stack2}/>
-      </div>
-
-      {/* last row */}
-      <div className="hand">
-        {hands[0].map((c, i) => <CardComponent key={i} suit={c.suit} number={c.number} revealed={true} isDragable={true}/>)}
+        <div className="deck">
+          {decks[1].length > 0 ? <CardComponent /> : <PileComponent />}
+          <p>{decks[1].length} cards remaining</p>
+        </div>
       </div>
     </div>
-
-    {/* last column */}
-    <div>
-      <div className="deck">
-        {decks[1].length > 0 ? <CardComponent/>:<PileComponent/>}
-        <p>{decks[1].length} cards remaining</p>
-      </div>
-    </div>
-  </div>);
+  );
 }
