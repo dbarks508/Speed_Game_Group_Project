@@ -4,6 +4,7 @@ import "./styles.css";
 import { CardComponent, PileComponent } from "./card";
 
 export default function Speed() {
+  const [init, setInit] = useState(true);
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
@@ -59,7 +60,7 @@ export default function Speed() {
           dealCards(shuffledDeck);
           console.log("cards dealt");
 
-          sendGameStateToServer(websocket);
+          //   sendGameStateToServer(websocket, msg.connectedPlayers);
         }
 
         // end the game if end game msg is sent
@@ -142,6 +143,30 @@ export default function Speed() {
     };
   }, []);
 
+  useEffect(() => {
+    if (
+      players.length === 2 &&
+      player1Hand.length > 0 &&
+      player2Hand.length > 0 &&
+      player1Deck.length > 0 &&
+      player2Deck.length > 0 &&
+      sideStacks.stack1.length > 0 &&
+      sideStacks.stack2.length > 0
+    ) {
+      console.log("sending over game state");
+      sendGameStateToServer(ws, init);
+      setInit(false);
+    }
+  }, [
+    players,
+    player1Hand,
+    player2Hand,
+    player1Deck,
+    player2Deck,
+    sideStacks,
+    ws,
+  ]);
+
   function dealCards(shuffledDeck) {
     let cards = [];
 
@@ -186,8 +211,8 @@ export default function Speed() {
     });
   }
 
-  function sendGameStateToServer(socket) {
-    console.log("in send game state");
+  function sendGameStateToServer(socket, init) {
+    console.log("in send game state and players are: ", players);
     const gameState = {
       players,
       player1Hand,
@@ -197,12 +222,16 @@ export default function Speed() {
       sideStacks,
     };
 
-    socket.send(
-      JSON.stringify({
-        type: "initializeGame",
-        gameState: gameState,
-      })
-    );
+    if (init) {
+      socket.send(
+        JSON.stringify({
+          type: "initializeGame",
+          gameState: gameState,
+        })
+      );
+    } else {
+      console.log("in send game state and init is", init);
+    }
   }
 
   function shuffle(arr) {
@@ -257,15 +286,13 @@ export default function Speed() {
   //     }
   //   }
 
-
-
-  function discardCard(stack, suit, number){
-    if(Math.abs(number - stack?.topCard?.number) !== 1) return false;
+  function discardCard(stack, suit, number) {
+    if (Math.abs(number - stack?.topCard?.number) !== 1) return false;
 
     // TODO: send message to server about the card played
 
-    stack.topCard = {suit, number};
-    setPlayedStacks({...playedStacks});
+    stack.topCard = { suit, number };
+    setPlayedStacks({ ...playedStacks });
 
     return true;
   }
@@ -275,51 +302,82 @@ export default function Speed() {
   let decks = [player1Deck, player2Deck];
   let hands = [player1Hand, player2Hand];
 
-  return (<div className="speed-body">
-    {/* first column */}
-    <div style={{display: "flex", alignItems: "flex-end"}}>
-      <div className="deck">
-        <p>{decks[0].length} cards remaining</p>
-        <PileComponent filterDrop={() => false} cards={decks[0]}/>
-      </div>
-    </div>
-
-    {/* middle column */}
-    <div style={{display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "center"}}>
-      {/* first row */}
-      <div className="hand">
-        {hands[1].map((_, i) => <CardComponent key={i}/>)}
+  return (
+    <div className="speed-body">
+      {/* first column */}
+      <div style={{ display: "flex", alignItems: "flex-end" }}>
+        <div className="deck">
+          <p>{decks[0].length} cards remaining</p>
+          <PileComponent filterDrop={() => false} cards={decks[0]} />
+        </div>
       </div>
 
-      {/* middle row */}
+      {/* middle column */}
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        {/* first row */}
+        <div className="hand">
+          {hands[1].map((_, i) => (
+            <CardComponent key={i} />
+          ))}
+        </div>
+
+        {/* middle row */}
+        <div>
+          <PileComponent filterDrop={() => false} cards={sideStacks?.stack1} />
+          <PileComponent
+            filterDrop={(suit, number) =>
+              discardCard(playedStacks?.stack1, suit, number)
+            }
+            revealed={true}
+            cards={
+              playedStacks?.stack1?.topCard == undefined
+                ? []
+                : [playedStacks.stack1.topCard]
+            }
+          />
+
+          <PileComponent
+            filterDrop={(suit, number) =>
+              discardCard(playedStacks?.stack2, suit, number)
+            }
+            revealed={true}
+            cards={
+              playedStacks?.stack2?.topCard == undefined
+                ? []
+                : [playedStacks.stack2.topCard]
+            }
+          />
+          <PileComponent filterDrop={() => false} cards={sideStacks?.stack2} />
+        </div>
+
+        {/* last row */}
+        <div className="hand">
+          {hands[0].map((c, i) => (
+            <CardComponent
+              key={i}
+              suit={c.suit}
+              number={c.number}
+              revealed={true}
+              isDragable={true}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* last column */}
       <div>
-        <PileComponent filterDrop={() => false} cards={sideStacks?.stack1}/>
-        <PileComponent
-          filterDrop={(suit, number) => discardCard(playedStacks?.stack1, suit, number)}
-          revealed={true}
-          cards={playedStacks?.stack1?.topCard == undefined ? []:[playedStacks.stack1.topCard]}
-        />
-
-        <PileComponent
-          filterDrop={(suit, number) => discardCard(playedStacks?.stack2, suit, number)}
-          revealed={true}
-          cards={playedStacks?.stack2?.topCard == undefined ? []:[playedStacks.stack2.topCard]}
-        />
-        <PileComponent filterDrop={() => false} cards={sideStacks?.stack2}/>
-      </div>
-
-      {/* last row */}
-      <div className="hand">
-        {hands[0].map((c, i) => <CardComponent key={i} suit={c.suit} number={c.number} revealed={true} isDragable={true}/>)}
+        <div className="deck">
+          {decks[1].length > 0 ? <CardComponent /> : <PileComponent />}
+          <p>{decks[1].length} cards remaining</p>
+        </div>
       </div>
     </div>
-
-    {/* last column */}
-    <div>
-      <div className="deck">
-        {decks[1].length > 0 ? <CardComponent/>:<PileComponent/>}
-        <p>{decks[1].length} cards remaining</p>
-      </div>
-    </div>
-  </div>);
+  );
 }
