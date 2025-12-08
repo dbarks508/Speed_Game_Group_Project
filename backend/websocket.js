@@ -1,7 +1,7 @@
 const { json } = require("express");
 const WebSocket = require("ws");
 
-const connectedPlayers = new Map();
+const connectedPlayers = [];
 
 let gameState = [
   {
@@ -59,7 +59,7 @@ function websocket(server) {
             existing.ws = ws;
             console.log("player reconnected");
           } else {
-            connectedPlayers.set(ws, { player: data.player });
+            connectedPlayers.push({ player: data.player });
           }
 
           // send current game state to player
@@ -130,7 +130,6 @@ function websocket(server) {
         }
 
         if (data.type === "playerAction") {
-          let currPlayer = connectedPlayers.get(ws).player;
           // compare the current card to the stack being played on
           // if the played card is one higher or lower than the top card of the played stack, allow play
           if (
@@ -149,7 +148,7 @@ function websocket(server) {
               gameState.stacks.stack2.topCard = gameState.playedCard;
             }
 
-            if (currPlayer === gameState.players[0].player.playerName) {
+            if (gameState.playerName === gameState.players[0].player.playerName) {
               // remove the played card from the player's hand
               gameState.player1Hand = gameState.player1Hand.filter(
                 (card) => card !== gameState.playedCard
@@ -161,7 +160,7 @@ function websocket(server) {
                 );
               }
             }
-            else if (currPlayer === gameState.players[1].player.playerName) {
+            else if (gameState.playerName === gameState.players[1].player.playerName) {
               // remove the played card from the player's hand
               gameState.player2Hand = gameState.player2Hand.filter(
                 (card) => card !== gameState.playedCard

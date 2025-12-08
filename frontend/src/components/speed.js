@@ -230,6 +230,8 @@ export default function Speed() {
   }
 
   function sendGameStateToServer(socket) {
+    const queryString = window.location.search;
+    const params = new URLSearchParams(queryString);
     console.log("in send game state");
     const gameState = {
       players,
@@ -240,7 +242,7 @@ export default function Speed() {
       sideStacks,
       playedStack,
       playedCard,
-      playerName,
+      playerName: params.get('playerName'),
     };
 
     if (init) {
@@ -395,6 +397,9 @@ export default function Speed() {
               number={c.number}
               revealed={true}
               isDragable={true}
+              onDrop={
+                playedCard = {suit, number}
+              }
             />
           ))}
         </div>
