@@ -24,6 +24,9 @@ export default function Speed() {
     stack2: [],
   });
 
+  const [playerName, setPlayerName] = useState("");
+  const [playedStack, setPlayedStack] = useState(null);
+
   const [init, setInit] = useState(true);
 
 
@@ -235,6 +238,9 @@ export default function Speed() {
       player1Deck,
       player2Deck,
       sideStacks,
+      playedStack,
+      playedCard,
+      playerName,
     };
 
     if (init) {
@@ -311,6 +317,10 @@ export default function Speed() {
         ({ suit: s, number: n }) => s == suit && n == number
       );
       if (!validateDrop(stack)(suit, number)) return;
+
+      setPlayedCard({ suit, number });
+      setPlayedStack(stack === playedStacks.stack1 ? "stack1" : "stack2");
+
 
       // TODO: send message to server about the card played
 
