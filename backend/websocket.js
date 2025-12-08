@@ -6,13 +6,9 @@ const connectedPlayers = [];
 let gameState = [
   {
     players: [
-      { player: null,
-        hand: [],
-        deck: [],
+      { player: null
       }, 
-      { player: null,
-        hand: [],
-        deck: [],}],
+      { player: null}],
     stacks: {
       stack1: { topCard: null, history: [] },
       stack2: { topCard: null, history: [] },
