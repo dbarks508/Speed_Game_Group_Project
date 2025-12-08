@@ -289,23 +289,22 @@ export default function Speed() {
     }
 
     // check player's hands for a valid play
-    for (let card in player1Hand){
-      // check if a play is valid in either discard piles
+    player1Hand.forEach((card) => {
       if (card.number == playedStacks.stack1.topCard.number + 1 || card.number == playedStacks.stack1.topCard.number - 1 ||
           card.number == playedStacks.stack2.topCard.number + 1 || card.number == playedStacks.stack2.topCard.number - 1
       ){
         validPlay = true;
       }
-    }
+    });
     // repeat for player2
-    for (let card in player2Hand){
+     player2Hand.forEach((card) => {
       // check if a play is valid in either discard piles
       if (card.number == playedStacks.stack1.topCard.number + 1 || card.number == playedStacks.stack1.topCard.number - 1 ||
           card.number == playedStacks.stack2.topCard.number + 1 || card.number == playedStacks.stack2.topCard.number - 1
       ){
         validPlay = true;
       }
-    }
+    });
     // check if side piles are empty, combine, shuffle and split discard piles and play the top card if so
     if (sideStacks.stack1.length == 0){
       let tempStack = playedStacks.stack1.history.concat(playedStacks.stack2.history);
