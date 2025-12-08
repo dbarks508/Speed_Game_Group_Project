@@ -300,12 +300,12 @@ export default function Speed() {
           cards={playedStacks?.stack1?.topCard == undefined ? []:[playedStacks.stack1.topCard]}
         />
 
-        <PileComponent filterDrop={() => false} cards={sideStacks?.stack2}/>
         <PileComponent
           filterDrop={(suit, number) => discardCard(playedStacks?.stack2, suit, number)}
           revealed={true}
           cards={playedStacks?.stack2?.topCard == undefined ? []:[playedStacks.stack2.topCard]}
         />
+        <PileComponent filterDrop={() => false} cards={sideStacks?.stack2}/>
       </div>
 
       {/* last row */}

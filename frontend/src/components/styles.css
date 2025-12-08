@@ -41,7 +41,7 @@ body{
 }
 
 .card{
-	height: 20vh;
+	height: 15vh;
 
 	user-select: none;
 }
