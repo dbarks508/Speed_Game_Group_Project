@@ -289,7 +289,7 @@ export default function Speed() {
     }
 
     // check player's hands for a valid play
-    for (card in player1Hand){
+    for (let card in player1Hand){
       // check if a play is valid in either discard piles
       if (card.number == playedStacks.stack1.topCard.number + 1 || card.number == playedStacks.stack1.topCard.number - 1 ||
           card.number == playedStacks.stack2.topCard.number + 1 || card.number == playedStacks.stack2.topCard.number - 1
@@ -298,7 +298,7 @@ export default function Speed() {
       }
     }
     // repeat for player2
-    for (card in player2Hand){
+    for (let card in player2Hand){
       // check if a play is valid in either discard piles
       if (card.number == playedStacks.stack1.topCard.number + 1 || card.number == playedStacks.stack1.topCard.number - 1 ||
           card.number == playedStacks.stack2.topCard.number + 1 || card.number == playedStacks.stack2.topCard.number - 1
