@@ -15,7 +15,7 @@ const server = http.createServer(app);
 // cors
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: `http://${process.env.HOST ?? localhost}:3000`,
     methods: "GET, HEAD, PUT, PATCH, POST, DELETE",
     credentials: true,
     optionsSuccessStatus: 204,

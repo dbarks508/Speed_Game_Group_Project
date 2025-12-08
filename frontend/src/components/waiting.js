@@ -15,7 +15,7 @@ export default function Waiting() {
   // use effect
   useEffect(() => {
     // connect websocket
-    const websocket = new WebSocket("ws://localhost:4000");
+    const websocket = new WebSocket(`ws://${document.location.hostname}:4000`);
 
     // web socket open
     websocket.onopen = () => {

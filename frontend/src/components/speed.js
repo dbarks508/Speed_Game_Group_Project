@@ -29,7 +29,7 @@ export default function Speed() {
 
   // use effect
   useEffect(() => {
-    const websocket = new WebSocket("ws://localhost:4000");
+    const websocket = new WebSocket(`ws://${document.location.hostname}:4000`);
     setWs(websocket);
 
     websocket.onopen = () => {
@@ -338,7 +338,7 @@ export default function Speed() {
   //       successfulOrNot: "todo",
   //     };
 
-  //     const response = await fetch(`http://localhost:4000/postScores`, {
+  //     const response = await fetch(`http://${document.location.hostname}:4000/postScores`, {
   //       method: "POST",
   //       credentials: "include",
   //       headers: { "Content-Type": "application/json" },
@@ -356,7 +356,7 @@ export default function Speed() {
   let hands = [player1Hand, player2Hand];
 
   function validateDrop(stack) {
-    return (suit, number) => Math.abs(number - stack?.topCard?.number) === 1;
+    return (suit, number) => stack?.topCard == undefined || Math.abs(number - stack?.topCard?.number) === 1;
   }
   function onDiscard(stack) {
     return (suit, number) => {

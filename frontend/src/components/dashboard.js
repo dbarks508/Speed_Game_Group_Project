@@ -8,7 +8,7 @@ export default function Dashboard() {
   useEffect(() => {
     async function getLeaderboard() {
       try {
-        const response = await fetch(`http://localhost:4000/leaderboard`, {
+        const response = await fetch(`http://${document.location.hostname}:4000/leaderboard`, {
           method: "GET",
           credentials: "include",
         });
