@@ -45,7 +45,7 @@ export default function Speed() {
         console.log("Websocket message: " + JSON.stringify(msg));
         // start game
         if (msg.action === "speed") {
-          console.log("connectedPlayers from server:", msg.connectedPlayers);
+          console.log("connectedPlayers from server:", msg.connectedPlayers);``
           setPlayers(msg.connectedPlayers);
           // randomly create and assign player hands, sideStacks, and decks
           // use helper function to initialize game state
@@ -62,7 +62,7 @@ export default function Speed() {
           dealCards(shuffledDeck);
           console.log("cards dealt");
 
-          dealSideStack();
+          //dealSideStack();
 
           sendGameStateToServer(websocket);
         }
@@ -126,7 +126,7 @@ export default function Speed() {
           }
 
           // deal new cards from side stacks if no valid plays are available
-          dealSideStack();
+          //dealSideStack();
           
         }
 
@@ -272,60 +272,7 @@ export default function Speed() {
   }
 
 
-  // deals a card from each side stack into it's respective discard pile
-  // if side stacks are empty, discard piles are combined, shuffled,
-  // and split, then a new card is played from each side stack
-  function dealSideStack(){
-    let validPlay = false;
-
-    // check if the discard stacks are null/empty
-    if (playedStacks.stack1.topCard == null){
-      // deal a card from side stack to played stack
-      playedStacks.stack1.topCard = sideStacks.stack1.pop();
-      playedStacks.stack1.history.push(playedStacks.stack1.topCard);
-      playedStacks.stack2.topCard = sideStacks.stack2.pop();
-      playedStacks.stack2.history.push(playedStacks.stack2.topCard);
-      return;
-    }
-
-    // check player's hands for a valid play
-    player1Hand.forEach((card) => {
-      if (card.number == playedStacks.stack1.topCard.number + 1 || card.number == playedStacks.stack1.topCard.number - 1 ||
-          card.number == playedStacks.stack2.topCard.number + 1 || card.number == playedStacks.stack2.topCard.number - 1
-      ){
-        validPlay = true;
-      }
-    });
-    // repeat for player2
-     player2Hand.forEach((card) => {
-      // check if a play is valid in either discard piles
-      if (card.number == playedStacks.stack1.topCard.number + 1 || card.number == playedStacks.stack1.topCard.number - 1 ||
-          card.number == playedStacks.stack2.topCard.number + 1 || card.number == playedStacks.stack2.topCard.number - 1
-      ){
-        validPlay = true;
-      }
-    });
-    // check if side piles are empty, combine, shuffle and split discard piles and play the top card if so
-    if (sideStacks.stack1.length == 0){
-      let tempStack = playedStacks.stack1.history.concat(playedStacks.stack2.history);
-      tempStack = shuffle(tempStack);
-      sideStacks.stack1 = tempStack.slice(0, Math.ceil(tempStack.length/2));
-      sideStacks.stack2 = tempStack.slice(Math.ceil(tempStack.length/2), tempStack.length);
-      playedStacks.stack1.topCard = sideStacks.stack1.pop();
-      playedStacks.stack2.topCard = sideStacks.stack2.pop();
-      playedStacks.stack1.history = [playedStacks.stack1.topCard];
-      playedStacks.stack2.history = [playedStacks.stack2.topCard];
-      return;
-    }
-
-    // if validPlay is false, draw a card from the side piles
-    if (!validPlay){
-      playedStacks.stack1.topCard = sideStacks.stack1.pop();
-      playedStacks.stack1.history.push(playedStacks.stack1.topCard);
-      playedStacks.stack2.topCard = sideStacks.stack2.pop();
-      playedStacks.stack2.history.push(playedStacks.stack2.topCard);
-    }
-  }
+  
 
   // use if necesssary
   //   async function postScores() {

@@ -1,9 +1,9 @@
 const { json } = require("express");
 const WebSocket = require("ws");
 
-const connectedPlayers = [];
+const connectedPlayers = null;
 
-const gameState = null;
+let gameState = [];
 
 // main web socket function
 function websocket(server) {
@@ -57,6 +57,7 @@ function websocket(server) {
         }
 
         if (data.type === "start") {
+
           // send start game state to all connected players
           wss.broadcast(
             JSON.stringify({
@@ -92,6 +93,9 @@ function websocket(server) {
           gameState.sidePiles.stack1 = state.sideStacks.stack1;
           gameState.sidePiles.stack2 = state.sideStacks.stack2;
 
+          // deal new cards from side stacks if no valid plays are available
+          dealSideStack();
+
           // send back to front
           wss.broadcast(
             JSON.stringify({
@@ -115,7 +119,7 @@ function websocket(server) {
             // update the played stack top card
             gameState.playedStack.topCard = gameState.playedCard;
 
-            if (gamestate.playerName === gameState.players[0].player.playerName) {
+            if (gameState.playerName === gameState.players[0].player.playerName) {
               // remove the played card from the player's hand
               gameState.player1Hand = gameState.player1Hand.filter(
                 (card) => card !== gameState.playedCard
@@ -127,7 +131,7 @@ function websocket(server) {
                 );
               }
             }
-            else if (gamestate.playerName === gameState.players[1].player.playerName) {
+            else if (gameState.playerName === gameState.players[1].player.playerName) {
               // remove the played card from the player's hand
               gameState.player2Hand = gameState.player2Hand.filter(
                 (card) => card !== gameState.playedCard
@@ -139,6 +143,9 @@ function websocket(server) {
                 );
               }
             }
+
+            // deal new cards from side stacks if no valid plays are available
+            dealSideStack();
 
             // send updated game state to all connected players
             wss.broadcast(
@@ -190,4 +197,62 @@ function websocket(server) {
 
   return wss;
 }
+
+// deals a card from each side stack into it's respective discard pile
+// if side stacks are empty, discard piles are combined, shuffled,
+  // and split, then a new card is played from each side stack
+  function dealSideStack(){
+    let validPlay = false;
+
+    // check if the discard stacks are null/empty
+    if (playedStacks.stack1.topCard == null){
+      console.log("dealing first cards to played stacks");
+      // deal a card from side stack to played stack
+      playedStacks.stack1.topCard = sideStacks.stack1.pop();
+      playedStacks.stack1.history.push(playedStacks.stack1.topCard);
+      playedStacks.stack2.topCard = sideStacks.stack2.pop();
+      playedStacks.stack2.history.push(playedStacks.stack2.topCard);
+      return;
+    }
+
+    // check player's hands for a valid play
+    player1Hand.forEach((card) => {
+      if (card.number == playedStacks.stack1.topCard.number + 1 || card.number == playedStacks.stack1.topCard.number - 1 ||
+          card.number == playedStacks.stack2.topCard.number + 1 || card.number == playedStacks.stack2.topCard.number - 1
+      ){
+        validPlay = true;
+      }
+    });
+    // repeat for player2
+     player2Hand.forEach((card) => {
+      // check if a play is valid in either discard piles
+      if (card.number == playedStacks.stack1.topCard.number + 1 || card.number == playedStacks.stack1.topCard.number - 1 ||
+          card.number == playedStacks.stack2.topCard.number + 1 || card.number == playedStacks.stack2.topCard.number - 1
+      ){
+        validPlay = true;
+      }
+    });
+    // check if side piles are empty, combine, shuffle and split discard piles and play the top card if so
+    if (sideStacks.stack1.length == 0){
+      let tempStack = playedStacks.stack1.history.concat(playedStacks.stack2.history);
+      tempStack = shuffle(tempStack);
+      sideStacks.stack1 = tempStack.slice(0, Math.ceil(tempStack.length/2));
+      sideStacks.stack2 = tempStack.slice(Math.ceil(tempStack.length/2), tempStack.length);
+      playedStacks.stack1.topCard = sideStacks.stack1.pop();
+      playedStacks.stack2.topCard = sideStacks.stack2.pop();
+      playedStacks.stack1.history = [playedStacks.stack1.topCard];
+      playedStacks.stack2.history = [playedStacks.stack2.topCard];
+      return;
+    }
+
+    // if validPlay is false, draw a card from the side piles
+    if (!validPlay){
+      playedStacks.stack1.topCard = sideStacks.stack1.pop();
+      playedStacks.stack1.history.push(playedStacks.stack1.topCard);
+      playedStacks.stack2.topCard = sideStacks.stack2.pop();
+      playedStacks.stack2.history.push(playedStacks.stack2.topCard);
+    }
+  }
+
+
 module.exports = websocket;
