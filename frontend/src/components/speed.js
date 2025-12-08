@@ -125,9 +125,8 @@ export default function Speed() {
             }, 5000);
           }
 
-          //if no players can make a valid move, play a card from the side stacks into the played stacks
-          //TO DO: implement logic to check for valid moves and play from side stacks
-
+          // deal new cards from side stacks if no valid plays are available
+          dealSideStack();
           
         }
 
@@ -272,17 +271,6 @@ export default function Speed() {
     return currPlayer && currPlayer.role === "host";
   }
 
-  // handle form changes, including disallowing changes if user is a host
-  function updateForm(jsonObj) {
-    // disallow changes if user is a host
-    if (isHost()) {
-      return;
-    }
-
-    //     return setForm((prevJsonObj) => {
-    //       return { ...prevJsonObj, ...jsonObj };
-    //     });
-  }
 
   // deals a card from each side stack into it's respective discard pile
   // if side stacks are empty, discard piles are combined, shuffled,
