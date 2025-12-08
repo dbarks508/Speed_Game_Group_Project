@@ -324,27 +324,6 @@ export default function Speed() {
     };
   }
 
-  function validateDrop(stack) {
-    return (suit, number) => Math.abs(number - stack?.topCard?.number) === 1;
-  }
-  function onDiscard(stack) {
-    return (suit, number) => {
-      let index = hands[0].findIndex(
-        ({ suit: s, number: n }) => s == suit && n == number
-      );
-      if (!validateDrop(stack)(suit, number)) return;
-
-      // TODO: send message to server about the card played
-
-      stack.topCard = { suit, number };
-      setPlayedStacks({ ...playedStacks });
-
-      hands[0].splice(index, 1);
-      setPlayer1Hand(player1Hand.slice());
-      setPlayer2Hand(player2Hand.slice());
-    };
-  }
-
   return (
     <div className="speed-body">
       {/* first column */}
