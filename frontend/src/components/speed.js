@@ -143,6 +143,7 @@ export default function Speed() {
     };
   }, []);
 
+  // use effect to call send game state
   useEffect(() => {
     if (
       players.length === 2 &&
@@ -230,7 +231,12 @@ export default function Speed() {
         })
       );
     } else {
-      console.log("in send game state and init is", init);
+      socket.send(
+        JSON.stringify({
+          type: "playerAction",
+          gameState: gameState,
+        })
+      );
     }
   }
 
