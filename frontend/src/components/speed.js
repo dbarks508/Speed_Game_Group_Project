@@ -259,30 +259,59 @@ export default function Speed() {
 
 
 
-  function discardCard(stack, suit, number){
-    if(Math.abs(number - stack?.topCard?.number) !== 1) return false;
-
-    // TODO: send message to server about the card played
-
-    stack.topCard = {suit, number};
-    setPlayedStacks({...playedStacks});
-
-    return true;
-  }
 
   // NOTE: it is assumed that the client is always player1
   //       if this is not the case, simply reverse the arrays below when needed
   let decks = [player1Deck, player2Deck];
   let hands = [player1Hand, player2Hand];
 
-  return (<div className="speed-body">
-    {/* first column */}
-    <div style={{display: "flex", alignItems: "flex-end"}}>
-      <div className="deck">
-        <p>{decks[0].length} cards remaining</p>
-        <PileComponent filterDrop={() => false} cards={decks[0]}/>
+  function validateDrop(stack){
+    return (suit, number) => Math.abs(number - stack?.topCard?.number) === 1;
+  }
+  function onDiscard(stack){
+    return (suit, number) => {
+      let index = hands[0].findIndex(({suit: s, number: n}) => s == suit && n == number);
+      if(!validateDrop(stack)(suit, number)) return;
+
+      // TODO: send message to server about the card played
+
+      stack.topCard = {suit, number};
+      setPlayedStacks({...playedStacks});
+
+      hands[0].splice(index, 1);
+      setPlayer1Hand(player1Hand.slice());
+      setPlayer2Hand(player2Hand.slice());
+    };
+  }
+
+  function validateDrop(stack){
+    return (suit, number) => Math.abs(number - stack?.topCard?.number) === 1;
+  }
+  function onDiscard(stack){
+    return (suit, number) => {
+      let index = hands[0].findIndex(({suit: s, number: n}) => s == suit && n == number);
+      if(!validateDrop(stack)(suit, number)) return;
+
+      // TODO: send message to server about the card played
+
+      stack.topCard = {suit, number};
+      setPlayedStacks({...playedStacks});
+
+      hands[0].splice(index, 1);
+      setPlayer1Hand(player1Hand.slice());
+      setPlayer2Hand(player2Hand.slice());
+    };
+  }
+
+  return (
+    <div className="speed-body">
+      {/* first column */}
+      <div style={{ display: "flex", alignItems: "flex-end" }}>
+        <div className="deck">
+          <p>{decks[0].length} cards remaining</p>
+          <PileComponent filterDrop={() => false} cards={decks[0]} />
+        </div>
       </div>
-    </div>
 
     {/* middle column */}
     <div style={{display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "center"}}>
@@ -295,13 +324,15 @@ export default function Speed() {
       <div>
         <PileComponent filterDrop={() => false} cards={sideStacks?.stack1}/>
         <PileComponent
-          filterDrop={(suit, number) => discardCard(playedStacks?.stack1, suit, number)}
+          filterDrop={validateDrop(playedStacks?.stack1)}
+          onDrop={onDiscard(playedStacks?.stack1)}
           revealed={true}
           cards={playedStacks?.stack1?.topCard == undefined ? []:[playedStacks.stack1.topCard]}
         />
 
         <PileComponent
-          filterDrop={(suit, number) => discardCard(playedStacks?.stack2, suit, number)}
+          filterDrop={validateDrop(playedStacks?.stack2)}
+          onDrop={onDiscard(playedStacks?.stack2)}
           revealed={true}
           cards={playedStacks?.stack2?.topCard == undefined ? []:[playedStacks.stack2.topCard]}
         />
