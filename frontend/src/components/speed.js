@@ -24,6 +24,9 @@ export default function Speed() {
     stack2: [],
   });
 
+  const [init, setInit] = useState(true);
+
+
   // use effect
   useEffect(() => {
     const websocket = new WebSocket("ws://localhost:4000");
@@ -58,6 +61,8 @@ export default function Speed() {
           const shuffledDeck = shuffle(deck);
           dealCards(shuffledDeck);
           console.log("cards dealt");
+
+          dealSideStack();
 
           sendGameStateToServer(websocket);
         }
@@ -284,6 +289,17 @@ export default function Speed() {
   // and split, then a new card is played from each side stack
   function dealSideStack(){
     let validPlay = false;
+
+    // check if the discard stacks are null/empty
+    if (playedStacks.stack1.topCard == null){
+      // deal a card from side stack to played stack
+      playedStacks.stack1.topCard = sideStacks.stack1.pop();
+      playedStacks.stack1.history.push(playedStacks.stack1.topCard);
+      playedStacks.stack2.topCard = sideStacks.stack2.pop();
+      playedStacks.stack2.history.push(playedStacks.stack2.topCard);
+      return;
+    }
+
     // check player's hands for a valid play
     for (card in player1Hand){
       // check if a play is valid in either discard piles
@@ -312,6 +328,7 @@ export default function Speed() {
       playedStacks.stack2.topCard = sideStacks.stack2.pop();
       playedStacks.stack1.history = [playedStacks.stack1.topCard];
       playedStacks.stack2.history = [playedStacks.stack2.topCard];
+      return;
     }
 
     // if validPlay is false, draw a card from the side piles
