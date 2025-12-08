@@ -20,13 +20,23 @@ function CardHelper({src, ...props}){
 function PileComponent({cards, revealed, filterDrop, onDrop, isDragable}){
 	cards = cards ?? [];
 
+	function getData(e){
+		let raw = e.dataTransfer.getData("json");
+		if(raw == undefined || raw.length == 0) return undefined;
+
+		let data = JSON.parse(raw);
+		if(data.suit == undefined || data.number == undefined) return undefined;
+
+		return data;
+	}
+
 	return (
 		<span
 			className="pile"
 
 			onDragOver={(e) => {
-				let data = JSON.parse(e.dataTransfer.getData("json"));
-				if(data.suit == undefined || data.number == undefined) return;
+				let data = getData(e);
+				if(data == undefined) return;
 
 				if(filterDrop == undefined || filterDrop(data.suit, data.number)){
 					e.preventDefault();
@@ -34,8 +44,8 @@ function PileComponent({cards, revealed, filterDrop, onDrop, isDragable}){
 			}}
 
 			onDrop={(e) => {
-				let data = JSON.parse(e.dataTransfer.getData("json"));
-				if(data.suit == undefined || data.number == undefined) return;
+				let data = getData(e);
+				if(data == undefined) return;
 
 				if(onDrop) onDrop(data.suit, data.number);
 			}}
