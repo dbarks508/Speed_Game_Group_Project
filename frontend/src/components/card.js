@@ -1,4 +1,4 @@
-import {useState, useEffect} from "react";
+import {useState} from "react";
 
 const SUITS = ["clubs", "diamonds", "hearts", "spades"];
 
@@ -20,21 +20,9 @@ function CardHelper({src, ...props}){
 function PileComponent({cards, revealed, filterDrop, onDrop, isDragable}){
 	cards = cards ?? [];
 
-	let [c, setCards] = useState(cards);
-	useEffect(() => setCards(cards), [cards]);
-
 	return (
 		<span
 			className="pile"
-
-			onDrop={(e) => {
-				let data = JSON.parse(e.dataTransfer.getData("json"));
-
-				if(data.suit != undefined && data.number != undefined){
-					c.push({suit: data.suit, number: data.number});
-					setCards(c.slice());
-				}
-			}}
 
 			onDragOver={(e) => {
 				let data = JSON.parse(e.dataTransfer.getData("json"));
@@ -53,19 +41,12 @@ function PileComponent({cards, revealed, filterDrop, onDrop, isDragable}){
 			}}
 		>
 		{
-			c.length == 0 ?(<CardHelper src="cards/blank.svg" onDragStart={(e) => e.preventDefault()}/>):
+			cards.length == 0 ?(<CardHelper src="cards/blank.svg" onDragStart={(e) => e.preventDefault()}/>):
 			(
 				<CardComponent
-					{...c.at(-1)}
+					{...cards.at(-1)}
 					revealed={revealed}
 					isDragable={isDragable}
-
-					onDrop={(e) => {
-						if(c.length > 0){
-							c.pop();
-							setCards(c.slice());
-						}
-					}}
 				/>
 			)
 		}
