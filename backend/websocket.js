@@ -107,8 +107,8 @@ function websocket(server) {
           // compare the current card to the stack being played on
           // if the played card is one higher or lower than the top card of the played stack, allow play
           if (
-            gameState.playedCard == gameState.playedStack.topCard + 1 ||
-            gameState.playedCard == gameState.playedStack.topCard - 1
+            gameState.playedCard.number == gameState.playedStack.topCard.number + 1 ||
+            gameState.playedCard.number == gameState.playedStack.topCard.number - 1
           ) {
             // allow play
             console.log("valid play, card played to stack");
@@ -149,6 +149,8 @@ function websocket(server) {
                 playedCard: gameState.playedCard,
                 playedStack: gameState.playedStack,
               })
+
+
             );
           } else {
             // dont allow play and return card to hand

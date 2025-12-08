@@ -14,8 +14,8 @@ export default function Speed() {
   const [player1Hand, setPlayer1Hand] = useState([]);
   const [player2Hand, setPlayer2Hand] = useState([]);
   const [playedStacks, setPlayedStacks] = useState({
-    stack1: { topCard: null },
-    stack2: { topCard: null },
+    stack1: { topCard: null, history: [] },
+    stack2: { topCard: null, history: [] },
   });
   const [player1Deck, setPlayer1Deck] = useState([]);
   const [player2Deck, setPlayer2Deck] = useState([]);
@@ -98,8 +98,10 @@ export default function Speed() {
             const updatedStacks = { ...prevStacks };
             if (msg.playedStack === "stack1") {
               updatedStacks.stack1.topCard = playedCard;
+              updatedStacks.stack1.history.push(playedCard);
             } else if (msg.playedStack === "stack2") {
               updatedStacks.stack2.topCard = playedCard;
+              updatedStacks.stack2.history.push(playedCard);
             }
             return updatedStacks;
           });
@@ -120,6 +122,8 @@ export default function Speed() {
 
           //if no players can make a valid move, play a card from the side stacks into the played stacks
           //TO DO: implement logic to check for valid moves and play from side stacks
+
+          
         }
 
         // prvents the card from being played and returns it to hand
@@ -273,6 +277,50 @@ export default function Speed() {
     //     return setForm((prevJsonObj) => {
     //       return { ...prevJsonObj, ...jsonObj };
     //     });
+  }
+
+  // deals a card from each side stack into it's respective discard pile
+  // if side stacks are empty, discard piles are combined, shuffled,
+  // and split, then a new card is played from each side stack
+  function dealSideStack(){
+    let validPlay = false;
+    // check player's hands for a valid play
+    for (card in player1Hand){
+      // check if a play is valid in either discard piles
+      if (card.number == playedStacks.stack1.topCard.number + 1 || card.number == playedStacks.stack1.topCard.number - 1 ||
+          card.number == playedStacks.stack2.topCard.number + 1 || card.number == playedStacks.stack2.topCard.number - 1
+      ){
+        validPlay = true;
+      }
+    }
+    // repeat for player2
+    for (card in player2Hand){
+      // check if a play is valid in either discard piles
+      if (card.number == playedStacks.stack1.topCard.number + 1 || card.number == playedStacks.stack1.topCard.number - 1 ||
+          card.number == playedStacks.stack2.topCard.number + 1 || card.number == playedStacks.stack2.topCard.number - 1
+      ){
+        validPlay = true;
+      }
+    }
+    // check if side piles are empty, combine, shuffle and split discard piles and play the top card if so
+    if (sideStacks.stack1.length == 0){
+      let tempStack = playedStacks.stack1.history.concat(playedStacks.stack2.history);
+      tempStack = shuffle(tempStack);
+      sideStacks.stack1 = tempStack.slice(0, Math.ceil(tempStack.length/2));
+      sideStacks.stack2 = tempStack.slice(Math.ceil(tempStack.length/2), tempStack.length);
+      playedStacks.stack1.topCard = sideStacks.stack1.pop();
+      playedStacks.stack2.topCard = sideStacks.stack2.pop();
+      playedStacks.stack1.history = [playedStacks.stack1.topCard];
+      playedStacks.stack2.history = [playedStacks.stack2.topCard];
+    }
+
+    // if validPlay is false, draw a card from the side piles
+    if (!validPlay){
+      playedStacks.stack1.topCard = sideStacks.stack1.pop();
+      playedStacks.stack1.history.push(playedStacks.stack1.topCard);
+      playedStacks.stack2.topCard = sideStacks.stack2.pop();
+      playedStacks.stack2.history.push(playedStacks.stack2.topCard);
+    }
   }
 
   // use if necesssary
