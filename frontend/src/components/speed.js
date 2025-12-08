@@ -45,7 +45,7 @@ export default function Speed() {
         console.log("Websocket message: " + JSON.stringify(msg));
         // start game
         if (msg.action === "speed") {
-          console.log("connectedPlayers from server:", msg.connectedPlayers);``
+          console.log("connectedPlayers from server:", msg.connectedPlayers);
           setPlayers(msg.connectedPlayers);
           // randomly create and assign player hands, sideStacks, and decks
           // use helper function to initialize game state
