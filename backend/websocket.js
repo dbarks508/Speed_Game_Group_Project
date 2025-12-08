@@ -3,32 +3,7 @@ const WebSocket = require("ws");
 
 const connectedPlayers = [];
 
-const gameState = {
-  players: [
-    {
-      player: "",
-      hand: [],
-      deck: [],
-    },
-    {
-      player: "",
-      hand: [],
-      deck: [],
-    },
-  ],
-  sidePiles: {
-    stack1: [],
-    stack2: [],
-  },
-  stacks: {
-    stack1: { topCard: null },
-    stack2: { topCard: null },
-  },
-  currentTurn: 0,
-
-  playedCard: null,
-  playedStack: { topCard: null },
-};
+const gameState = null;
 
 // main web socket function
 function websocket(server) {
@@ -139,6 +114,31 @@ function websocket(server) {
             console.log("valid play, card played to stack");
             // update the played stack top card
             gameState.playedStack.topCard = gameState.playedCard;
+
+            if (gamestate.playerName === gameState.players[0].player.playerName) {
+              // remove the played card from the player's hand
+              gameState.player1Hand = gameState.player1Hand.filter(
+                (card) => card !== gameState.playedCard
+              );
+              // draw the top most card from their deck
+              if (gameState.player1Deck.length > 0) {
+                gameState.player1Hand.push(
+                  gameState.player1Deck.pop()
+                );
+              }
+            }
+            else if (gamestate.playerName === gameState.players[1].player.playerName) {
+              // remove the played card from the player's hand
+              gameState.player2Hand = gameState.player2Hand.filter(
+                (card) => card !== gameState.playedCard
+              );
+              // draw the top most card from their deck
+              if (gameState.player2Deck.length > 0) {
+                gameState.player2Hand.push(
+                  gameState.player2Deck.pop()
+                );
+              }
+            }
 
             // send updated game state to all connected players
             wss.broadcast(
