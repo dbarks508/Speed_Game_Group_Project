@@ -27,7 +27,7 @@ const gameState = {
   currentTurn: 0,
 
   playedCard: null,
-  playedStack: null,
+  playedStack: { topCard: null },
 };
 
 // main web socket function
@@ -153,6 +153,15 @@ function websocket(server) {
           } else {
             // dont allow play and return card to hand
             console.log("invalid play, card returned to hand");
+            wss.broadcast(
+              JSON.stringify({
+                action: "badPlay",
+                gameState: gameState, // front end needs to update game visual state
+                playerName: gameState.playerName,
+                playedCard: gameState.playedCard,
+                playedStack: gameState.playedStack,
+              })
+            );
           }
         }
       } catch (err) {
@@ -170,34 +179,6 @@ function websocket(server) {
       );
     });
 
-    //handle player actions, such as playing a card
-    wss.on("playerAction", (gameState) => {
-      // compare the current card to the stack being played on
-      // if the played card is one higher or lower than the top card of the played stack, allow play
-      if (
-        gameState.playedCard == gameState.playedStack.topCard + 1 ||
-        gameState.playedCard == gameState.playedStack.topCard - 1
-      ) {
-        // allow play
-        console.log("valid play, card played to stack");
-        // update the played stack top card
-        gameState.playedStack.topCard = gameState.playedCard;
-
-        // send updated game state to all connected players
-        wss.broadcast(
-          JSON.stringify({
-            action: "update",
-            gameState: gameState, // front end needs to update game visual state
-            playerName: gameState.playerName,
-            playedCard: gameState.playedCard,
-            playedStack: gameState.playedStack,
-          })
-        );
-      } else {
-        // dont allow play and return card to hand
-        console.log("invalid play, card returned to hand");
-      }
-    });
 
     // ws connection closed
     ws.on("close", () => {

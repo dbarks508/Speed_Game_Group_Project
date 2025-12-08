@@ -122,6 +122,16 @@ export default function Speed() {
           //TO DO: implement logic to check for valid moves and play from side stacks
         }
 
+        // prvents the card from being played and returns it to hand
+        if (msg.type === "badPlay"){
+          if (msg.playerName === players[0].playerName){
+              
+          }
+          else if (msg.playerName === players[1].playerName){
+
+          }
+        }
+
         // handle errors
         if (msg.error) {
           setErrorMessage(msg.error);
