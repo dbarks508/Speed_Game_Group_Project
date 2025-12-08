@@ -17,7 +17,7 @@ function CardHelper({src, ...props}){
 	return (<img className="card" src={src} {...props}/>);
 }
 
-function PileComponent({cards, revealed, filterDrop, isDragable}){
+function PileComponent({cards, revealed, filterDrop, onDrop, isDragable}){
 	cards = cards ?? [];
 
 	return (
@@ -31,6 +31,13 @@ function PileComponent({cards, revealed, filterDrop, isDragable}){
 				if(filterDrop == undefined || filterDrop(data.suit, data.number)){
 					e.preventDefault();
 				}
+			}}
+
+			onDrop={(e) => {
+				let data = JSON.parse(e.dataTransfer.getData("json"));
+				if(data.suit == undefined || data.number == undefined) return;
+
+				if(onDrop) onDrop(data.suit, data.number);
 			}}
 		>
 		{
