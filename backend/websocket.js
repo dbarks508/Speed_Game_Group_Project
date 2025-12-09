@@ -3,28 +3,27 @@ const WebSocket = require("ws");
 
 const connectedPlayers = [];
 
-let gameState = 
-  {
-    players: [
-      { player: null
-      }, 
-      { player: null}],
-    stacks: {
-      stack1: { topCard: null, history: [] },
-      stack2: { topCard: null, history: [] },
-    },
-    sidePiles: {
-      stack1: [],
-      stack2: [],
-    },
-    player1Hand: [],
-    player2Hand: [],
-    player1Deck: [],
-    player2Deck: [],
-    playedCard: null,
-    playedStack: null,
-    playerName: null,
-  };
+let gameState = {
+  players: [
+    { player: null },
+    { player: null }
+  ],
+  discardPiles: {
+    stack1: { topCard: null, history: [] },
+    stack2: { topCard: null, history: [] },
+  },
+  sidePiles: {
+    stack1: [],
+    stack2: [],
+  },
+  player1Hand: [],
+  player2Hand: [],
+  player1Deck: [],
+  player2Deck: [],
+  playedCard: null,
+  playedStack: null,
+  playerName: null,
+};
 
 // main web socket function
 function websocket(server) {
@@ -91,9 +90,12 @@ function websocket(server) {
         if (data.type === "initializeGame") {
           const state = data.gameState; // <-- the object from the front end
 
-          // Assign player names
-          gameState.players[0].player = state.players[0].player;
-          gameState.players[1].player = state.players[1].player;
+          // Assign player name
+          if(
+            gameState.players[0].player == null ||
+            (gameState.players[0].player != null && gameState.players[1].player != null)
+          ) gameState.players[0].player = state.playerName;
+          else gameState.players[1].player = state.playerName;
 
           // Assign hands
           gameState.players[0].hand = state.player1Hand;
@@ -104,12 +106,8 @@ function websocket(server) {
           gameState.players[1].deck = state.player2Deck;
 
           // Assign side stacks
-          gameState.stacks.stack1.topCard = state.sideStacks.stack1[0];
-          gameState.stacks.stack2.topCard = state.sideStacks.stack2[0];
-
-          // Remove the top cards from side stacks
-          state.sideStacks.stack1.shift();
-          state.sideStacks.stack2.shift();
+          gameState.discardPiles.stack1 = {topCard: null, history: []};
+          gameState.discardPiles.stack2 = {topCard: null, history: []};
 
           gameState.sidePiles.stack1 = state.sideStacks.stack1;
           gameState.sidePiles.stack2 = state.sideStacks.stack2;
@@ -131,20 +129,17 @@ function websocket(server) {
         if (data.type === "playerAction") {
           // compare the current card to the stack being played on
           // if the played card is one higher or lower than the top card of the played stack, allow play
-          if (
-            gameState.playedCard.number == gameState.playedStack.topCard.number + 1 ||
-            gameState.playedCard.number == gameState.playedStack.topCard.number - 1
-          ) {
+          if (validPlay(gameState.playedCard, gameState.playedStack.topCard)) {
             // allow play
             console.log("valid play, card played to stack");
             // update the played stack
             gameState.playedStack.history.push(gameState.topCard);
             gameState.playedStack.topCard = gameState.playedCard;
 
-            if (gameState.playedStack === gameState.stacks.stack1) {
-              gameState.stacks.stack1.topCard = gameState.playedCard;
-            } else if (gameState.playedStack === gameState.stacks.stack2) {
-              gameState.stacks.stack2.topCard = gameState.playedCard;
+            if (gameState.playedStack === gameState.discardPiles.stack1) {
+              gameState.discardPiles.stack1.topCard = gameState.playedCard;
+            } else if (gameState.playedStack === gameState.discardPiles.stack2) {
+              gameState.discardPiles.stack2.topCard = gameState.playedCard;
             }
 
             if (gameState.playerName === gameState.players[0].player.playerName) {
@@ -226,59 +221,54 @@ function websocket(server) {
   return wss;
 }
 
+
+
+function validPlay(card1, card2){
+  return Math.abs(card1.number - card2.number) % 13 === 1;
+}
+
+function isPlayable(hand){
+  hand.some((card) => (
+    validPlay(card.number, gameState.discardPiles.stack1.topCard) ||
+    validPlay(card.number, gameState.discardPiles.stack2.topCard)
+  ));
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    // pick a random index from 0 to i inclusive
+    const j = Math.floor(Math.random() * (i + 1)); // at random index
+    // Swap arr[i] with the element
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 // deals a card from each side stack into it's respective discard pile
 // if side stacks are empty, discard piles are combined, shuffled,
-  // and split, then a new card is played from each side stack
+// and split, then a new card is played from each side stack
 function dealSideStack(){
-  let validPlay = false;
-
-    // check if the discard stacks are null/empty
-  if (gameState.playedStacks.stack1.topCard == null){
-    console.log("dealing first cards to played stacks");
-      // deal a card from side stack to played stack
-    gameState.playedStacks.stack1.topCard = gameState.sideStacks.stack1.pop();
-    gameState.playedStacks.stack1.history.push(gameState.playedStacks.stack1.topCard);
-    gameState.playedStacks.stack2.topCard = gameState.sideStacks.stack2.pop();
-    gameState.playedStacks.stack2.history.push(gameState.playedStacks.stack2.topCard);
-    return;
-  }
-
-    // check player's hands for a valid play
-  player1Hand.forEach((card) => {
-    if (card.number == gameState.playedStacks.stack1.topCard.number + 1 || card.number == gameState.playedStacks.stack1.topCard.number - 1 ||
-        card.number == gameState.playedStacks.stack2.topCard.number + 1 || card.number == gameState.playedStacks.stack2.topCard.number - 1
-    ){
-      validPlay = true;
-    }
-  });
-  // repeat for player2
-  player2Hand.forEach((card) => {
-    // check if a play is valid in either discard piles
-    if (card.number == gameState.playedStacks.stack1.topCard.number + 1 || card.number == gameState.playedStacks.stack1.topCard.number - 1 ||
-        card.number == gameState.playedStacks.stack2.topCard.number + 1 || card.number == gameState.playedStacks.stack2.topCard.number - 1
-    ){
-      validPlay = true;
-    }
-  });
-  // check if side piles are empty, combine, shuffle and split discard piles and play the top card if so
-  if (sideStacks.stack1.length == 0){
-    let tempStack = gameState.playedStacks.stack1.history.concat(gameState.playedStacks.stack2.history);
-    tempStack = shuffle(tempStack);
-    gameState.sidePiles.stack1 = tempStack.slice(0, Math.ceil(tempStack.length/2));
-    gameState.sidePiles.stack2 = tempStack.slice(Math.ceil(tempStack.length/2), tempStack.length);
-    gameState.playedStacks.stack1.topCard = gameState.sidePiles.stack1.pop();
-    gameState.playedStacks.stack2.topCard = gameState.sidePiles.stack2.pop();
-    gameState.playedStacks.stack1.history = [gameState.playedStacks.stack1.topCard];
-    gameState.playedStacks.stack2.history = [gameState.playedStacks.stack2.topCard];
-    return;
-  }
+  // check if at game start or if player's a hand has a valid play
+  let validPlay = gameState.discardPiles.stack1.topCard != undefined && (isPlayable(gameState.player1Hand) || isPlayable(gameState.player2Hand));
 
   // if validPlay is false, draw a card from the side piles
   if (!validPlay){
-    gameState.playedStacks.stack1.topCard = gameState.sidePiles.stack1.pop();
-    gameState.playedStacks.stack1.history.push(gameState.playedStacks.stack1.topCard);
-    gameState.gameState.playedStacks.stack2.topCard = gameState.sidePiles.stack2.pop();
-    gameState.playedStacks.stack2.history.push(gameState.playedStacks.stack2.topCard);
+    // check if side piles are empty, combine, shuffle and split discard piles and play the top card if so
+    if (gameState.sidePiles.stack1.length == 0 || gameState.sidePiles.stack2.length == 0){
+      let tempStack = gameState.discardPiles.stack1.history.concat(gameState.discardPiles.stack2.history);
+      tempStack = shuffle(tempStack);
+
+      gameState.sidePiles.stack1 = tempStack.splice(Math.ceil(tempStack.length/2));
+      gameState.sidePiles.stack2 = tempStack;
+
+      gameState.discardPiles.stack1 = {topCard: null, history: []};
+      gameState.discardPiles.stack2 = {topCard: null, history: []};
+    }
+
+    gameState.discardPiles.stack1.topCard = gameState.sidePiles.stack1.pop();
+    gameState.discardPiles.stack1.history.push(gameState.discardPiles.stack1.topCard);
+    gameState.discardPiles.stack2.topCard = gameState.sidePiles.stack2.pop();
+    gameState.discardPiles.stack2.history.push(gameState.discardPiles.stack2.topCard);
   }
 }
 
