@@ -7,10 +7,9 @@ dashboardRoutes.route("/leaderboard/add").post(async (req, response) => {
   try {
     let db = dbo.getDB();
     let myObj = {
-      Name: req.body.Name,
-      Wins: req.body.Wins,
-      Losses: req.body.Losses,
-      numCardsRemaining: req.body.numCardsRemaining,
+      name: req.body.name,
+      winner: req.body.winner,
+      cardCount: req.body.cardCount,
     };
 
     // Insert the object into the "scores" collection
@@ -31,24 +30,23 @@ dashboardRoutes.route("/leaderboard").get(async (req, res) => {
     let query = {};
     // Filtering query by name
     if (req.query.name) {
-      query = { Name: req.query.name };
+      query = { name: req.query.name };
     }
 
     // Getting all records
     // Sorting by: { numCardsRemaining: -1 } to get the highest number of cards remaining first
     const gameData = await gameCollection
       .find(query)
-      .sort({ numCardsRemaining: -1 })
+      .sort({ cardCount: -1 })
       .toArray();
 
     // Creating a list to put it all into
     const formattedLeaderboard = gameData.map((game) => {
       return {
         id: game._id.toString(),
-        Name: game.Name,
-        Wins: game.Wins,
-        Losses: game.Losses,
-        numCardsRemaining: game.numCardsRemaining,
+        name: game.name,
+        winner: game.winner,
+        cardCount: game.cardCount,
       };
     });
 

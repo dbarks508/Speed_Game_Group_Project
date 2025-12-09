@@ -109,7 +109,7 @@ function websocket(server) {
             let cardCount = loser.hand.length + loser.deck.length;
 
             sendToAll(name => {
-              dbo.getDB().collection("game_data").insertOne({name, winner: name == player.name, cardCount}).catch(err => {
+              dbo.getDB().collection("scores").insertOne({name, winner: name == player.name, cardCount}).catch(err => {
                 console.error("error when writing to db");
                 console.error(err);
               });

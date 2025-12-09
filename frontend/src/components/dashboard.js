@@ -42,8 +42,8 @@ export default function Dashboard() {
   }, []);
 
   // Calculating totals:
-  const totalWins = leaderboardData.reduce((sum, game) => sum + (game.Wins || 0), 0);
-  const totalLosses = leaderboardData.reduce((sum, game) => sum + (game.Losses || 0), 0);
+  const totalWins = leaderboardData.filter((game) => game.winner === true).length;
+  const totalLosses = leaderboardData.filter((game) => game.winner === false).length;
 
   return (
     <div className="background">
@@ -78,15 +78,15 @@ export default function Dashboard() {
                 // Getting data and assigning it to the leaderboard rows
                 leaderboardData.map((game, index) => (
                   <div className="table-row" key={index}>
-                    <div className="col">{game.Name}</div>
+                    <div className="col">{game.name}</div>
                     <div className="col">
-                      {game.Wins > 0 ? (
+                      {game.winner > 0 ? (
                         <span style={{ color: "#4caf50", fontWeight: "bold" }}>Win</span>
                       ) : (
                         <span style={{ color: "#f44336", fontWeight: "bold" }}>Loss</span>
                       )}
                     </div>
-                    <div className="col text-right">{game.numCardsRemaining}</div>
+                    <div className="col text-right">{game.cardCount}</div>
                   </div>
                 ))
               )}
