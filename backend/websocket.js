@@ -20,7 +20,7 @@ function parseGameState(name){
 
   let out = {
     hand: gameState.players[playerIndex].hand,
-    otherHandCount: gameState.players[(playerIndex + 1) % 2].hand.length,
+    otherHandCount: gameState.players.at(playerIndex - 1).hand.length,
 
     deckCount: gameState.players.map(p => p.deck.length),
     sideCount: gameState.sidePiles.map(d => d.length),
@@ -124,7 +124,9 @@ function websocket(server) {
 function validPlay(card1, card2){
   if(card1?.number == undefined || card2?.number == undefined) return false;
 
-  return Math.abs(card1.number - card2.number) % 13 === 1;
+  return Math.abs(card1.number - card2.number) % 13 === 1 ||
+    (card1.number == 1 && card2.number == 13) ||
+    (card2.number == 1 && card1.number == 13);
 }
 
 function isPlayable(){

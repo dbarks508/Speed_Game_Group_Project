@@ -104,7 +104,12 @@ export default function Speed() {
 
 
   function validateDrop(discardIndex) {
-    return (suit, number) => Math.abs(number - gameState.discardTops[discardIndex].number) % 13 === 1;
+    return (suit, number) => {
+      let other = gameState.discardTops[discardIndex].number;
+      return Math.abs(number - other) % 13 === 1 ||
+        (number == 1 && other == 13) ||
+        (other == 1 && number == 13);
+    };
   }
   function onDiscard(discardIndex) {
     return (suit, number) => {
@@ -122,8 +127,8 @@ export default function Speed() {
       {/* first column */}
       <div style={{ display: "flex", alignItems: "flex-end" }}>
         <div className="deck">
-          <p>{gameState.deckCount[1]} cards remaining</p>
-          {gameState.deckCount[1] > 0 ? <CardComponent /> : <PileComponent filterDrop={() => false}/>}
+          <p>{gameState.deckCount[0]} cards remaining</p>
+          {gameState.deckCount[0] > 0 ? <CardComponent /> : <PileComponent filterDrop={() => false}/>}
         </div>
       </div>
 
@@ -179,8 +184,8 @@ export default function Speed() {
       {/* last column */}
       <div>
         <div className="deck">
-          {gameState.deckCount[0] > 0 ? <CardComponent /> : <PileComponent filterDrop={() => false}/>}
-          <p>{gameState.deckCount[0]} cards remaining</p>
+          {gameState.deckCount[1] > 0 ? <CardComponent /> : <PileComponent filterDrop={() => false}/>}
+          <p>{gameState.deckCount[1]} cards remaining</p>
         </div>
       </div>
     </div>
