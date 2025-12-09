@@ -36,7 +36,7 @@
 
 .table-header-row {
     display: grid;
-    grid-template-columns: 0.5fr 1.5fr 2fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1.5fr 2fr;
     padding: 1rem;
     background-color: #374151;
     font-weight: 700;
@@ -48,7 +48,7 @@
 
 .table-row {
     display: grid;
-    grid-template-columns: 0.5fr 1.5fr 2fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1.5fr 2fr;
     align-items: center;
     padding: 1rem;
     background-color: #4b5563;
