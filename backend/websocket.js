@@ -202,7 +202,7 @@ function websocket(server) {
           }
         }
       } catch (err) {
-        console.log("message error: ", err.message);
+        console.error(err);
       }
     });
 
