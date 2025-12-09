@@ -22,12 +22,10 @@ export default function Waiting() {
       console.log("connected to websocket on front end");
 
       // get player data and sent
-      const gameState = {
+      websocket.send(JSON.stringify({
         type: "join",
         player: playerName,
-      };
-
-      websocket.send(JSON.stringify(gameState));
+      }));
 
       // dots display
       intevalRef.current = setInterval(() => {
@@ -78,7 +76,7 @@ export default function Waiting() {
     <div>
       <h1>Waiting room</h1>
       <p>Waiting for players to join{dots}</p>
-      <p>{message.join(", ")}</p>
+      <p>{message.length == 0 || message.join(", ")}</p>
     </div>
   );
 }

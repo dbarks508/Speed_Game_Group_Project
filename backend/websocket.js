@@ -1,42 +1,47 @@
-const { json } = require("express");
 const WebSocket = require("ws");
 
-const connectedPlayers = [];
+const SUITS = ["clubs", "diamonds", "hearts", "spades"];
+
+const connectedPlayers = new Map();
 
 let gameState = {
   players: [
-    { player: null },
-    { player: null }
+    {name: "", hand: [], deck: []},
+    {name: "", hand: [], deck: []},
   ],
-  discardPiles: {
-    stack1: { topCard: null, history: [] },
-    stack2: { topCard: null, history: [] },
-  },
-  sidePiles: {
-    stack1: [],
-    stack2: [],
-  },
-  player1Hand: [],
-  player2Hand: [],
-  player1Deck: [],
-  player2Deck: [],
-  playedCard: null,
-  playedStack: null,
-  playerName: null,
+
+  discardPiles: [[], []],
+  sidePiles: [[], []],
 };
+
+function parseGameState(name){
+  let playerIndex = gameState.players.findIndex(p => p.name == name);
+  if(player < 0) return JSON.stringify({type: "error", error: `error: player '${name}' not found!`});
+
+  let out = {
+    hand: gameState.players[playerIndex].hand,
+    otherHandCount: gameState.players[(playerIndex + 1) % 2].hand.length,
+    
+    deckCount: gameState.players.map(p => p.deck.length),
+    sideCount: gameState.sidePiles.map(d => d.length),
+
+    discardTops: gameState.discardPiles.map(d => d.at(-1)),
+  };
+
+  if(player > 0){
+    out.deckCount.reverse();
+  }
+
+  return JSON.stringify({type:"update", state: out});
+}
 
 // main web socket function
 function websocket(server) {
   const wss = new WebSocket.Server({ server });
 
-  // ----- web socket helper -----
-  wss.broadcast = function broadcast(data) {
-    wss.clients.forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(data);
-      }
-    });
-  };
+  function updateAll(){
+    gameState.players.map(p => p.name).forEach(n => connectedPlayers.get(n).send(parseGameState(n)));
+  }
 
   // ----- main web socket logic -----
   wss.on("connection", (ws) => {
@@ -44,181 +49,57 @@ function websocket(server) {
 
     // ws recieves messages from the client
     ws.on("message", (message) => {
-      console.log(message.toString());
       try {
         const data = JSON.parse(message);
 
         // state join sent  from waiting room
         if (data.type === "join") {
-          const existing = connectedPlayers.find(
-            (p) => p.player === data.player
-          );
-          if (existing) {
-            existing.ws = ws;
-            console.log("player reconnected");
-          } else {
-            connectedPlayers.push({ player: data.player });
-          }
+          if(data.player == undefined) return;
+
+          let reconnect = connectedPlayers.has(data.player);
+          connectedPlayers.set(data.player, ws);
 
           // send current game state to player
-          if (connectedPlayers.length == 2) {
-            wss.clients.forEach((client) => {
-              if (client.readyState === WebSocket.OPEN) {
-                console.log("sending state");
-                client.send(
-                  JSON.stringify({
-                    action: "speed",
-                    connectedPlayers: connectedPlayers,
-                  })
-                );
-              }
-            });
+          if (!reconnect && connectedPlayers.length == 2) {
+            initGameState(connectedPlayers.values().slice(2));
+
+            updateAll();
           }
         }
 
-        if (data.type === "start") {
-
-          // send start game state to all connected players
-          wss.broadcast(
-            JSON.stringify({
-              action: "speed",
-              connectedPlayers: connectedPlayers,
-            })
-          );
+        if (data.type === "update") {
+          ws.send(parseGameState(data.player));
         }
 
-        if (data.type === "initializeGame") {
-          const state = data.gameState; // <-- the object from the front end
+        if (data.type === "play") {
+          let player = gameState.players.find(p => p.name == data.player);
+          if(player == undefined || data.card == undefined || data.discardPile == undefined) return;
 
-          // Assign player name
-          if(
-            gameState.players[0].player == null ||
-            (gameState.players[0].player != null && gameState.players[1].player != null)
-          ) gameState.players[0].player = state.playerName;
-          else gameState.players[1].player = state.playerName;
+          // ensure player actually has the card
+          let cardIndex = player.hand.findIndex(({suit, number}) => suit == card.suit && number == card.number);
+          if(cardIndex < 0) return;
 
-          // Assign hands
-          gameState.players[0].hand = state.player1Hand;
-          gameState.players[1].hand = state.player2Hand;
+          // ensure the play is legal
+          if(!validPlay(card, discardPile[data.discardPile].at(-1))) return;
 
-          // Assign decks
-          gameState.players[0].deck = state.player1Deck;
-          gameState.players[1].deck = state.player2Deck;
+          // 'compute' the play
+          discardPile[data.discardPile].push(card);
+          player.hand.splice(cardIndex, 1);
+          if(player.deck.length > 0){
+            player.hand.push(player.deck.pop());
+          }
 
-          // Assign side stacks
-          gameState.discardPiles.stack1 = {topCard: null, history: []};
-          gameState.discardPiles.stack2 = {topCard: null, history: []};
-
-          gameState.sidePiles.stack1 = state.sideStacks.stack1;
-          gameState.sidePiles.stack2 = state.sideStacks.stack2;
-
-          // deal new cards from side stacks if no valid plays are available
           dealSideStack();
 
-          // send back to front
-          wss.broadcast(
-            JSON.stringify({
-              action: "update",
-              gameState: gameState,
-            })
-          );
-
-          console.log("Game initialized and broadcasted:", gameState);
-        }
-
-        if (data.type === "playerAction") {
-          // abort if player has not actually taken an action
-          if(gameState.playedCard == undefined) return;
-
-          // compare the current card to the stack being played on
-          // if the played card is one higher or lower than the top card of the played stack, allow play
-          if (validPlay(gameState.playedCard, gameState.playedStack.topCard)) {
-            // allow play
-            console.log("valid play, card played to stack");
-            // update the played stack
-            gameState.playedStack.history.push(gameState.topCard);
-            gameState.playedStack.topCard = gameState.playedCard;
-
-            if (gameState.playedStack === gameState.discardPiles.stack1) {
-              gameState.discardPiles.stack1.topCard = gameState.playedCard;
-            } else if (gameState.playedStack === gameState.discardPiles.stack2) {
-              gameState.discardPiles.stack2.topCard = gameState.playedCard;
-            }
-
-            if (gameState.playerName === gameState.players[0].player.playerName) {
-              // remove the played card from the player's hand
-              gameState.player1Hand = gameState.player1Hand.filter(
-                (card) => card !== gameState.playedCard
-              );
-              // draw the top most card from their deck
-              if (gameState.player1Deck.length > 0) {
-                gameState.player1Hand.push(
-                  gameState.player1Deck.pop()
-                );
-              }
-            }
-            else if (gameState.playerName === gameState.players[1].player.playerName) {
-              // remove the played card from the player's hand
-              gameState.player2Hand = gameState.player2Hand.filter(
-                (card) => card !== gameState.playedCard
-              );
-              // draw the top most card from their deck
-              if (gameState.player2Deck.length > 0) {
-                gameState.player2Hand.push(
-                  gameState.player2Deck.pop()
-                );
-              }
-            }
-
-            // deal new cards from side stacks if no valid plays are available
-            dealSideStack();
-
-            // send updated game state to all connected players
-            wss.broadcast(
-              JSON.stringify({
-                action: "update",
-                gameState: gameState, // front end needs to update game visual state
-                playerName: gameState.playerName,
-                playedCard: gameState.playedCard,
-                playedStack: gameState.playedStack,
-              })
-
-
-            );
-          } else {
-            // dont allow play and return card to hand
-            console.log("invalid play, card returned to hand");
-            wss.broadcast(
-              JSON.stringify({
-                action: "badPlay",
-                gameState: gameState, // front end needs to update game visual state
-                playerName: gameState.playerName,
-                playedCard: gameState.playedCard,
-                playedStack: gameState.playedStack,
-              })
-            );
-          }
+          updateAll();
         }
       } catch (err) {
         console.error(err);
       }
     });
 
-    wss.on("start", (gameState) => {
-      // send start game state to all connected players
-      wss.broadcast(
-        JSON.stringify({
-          action: "speed",
-          gameState: gameState, // front end needs to initialize game visual state
-        })
-      );
-    });
-
-
     // ws connection closed
-    ws.on("close", () => {
-      console.log("client disconnected");
-    });
+    ws.on("close", () => console.log("client disconnected"));
   });
 
   return wss;
@@ -227,14 +108,15 @@ function websocket(server) {
 
 
 function validPlay(card1, card2){
+  if(card1?.number == undefined || card2?.number == undefined) return false;
+  
   return Math.abs(card1.number - card2.number) % 13 === 1;
 }
 
 function isPlayable(hand){
-  hand.some((card) => (
-    validPlay(card.number, gameState.discardPiles.stack1.topCard) ||
-    validPlay(card.number, gameState.discardPiles.stack2.topCard)
-  ));
+  hand.some((card) => {
+    return gameState.discardPiles.some(d => d.length > 0 && validPlay(card.number, d.at(-1)));
+  });
 }
 
 function shuffle(arr) {
@@ -247,32 +129,54 @@ function shuffle(arr) {
   return arr;
 }
 
+function partition(arr, chunkSize){
+  arr = arr.slice();
+  let out = [];
+  
+  for(let i = 0; i < arr.len; i += chunkSize){
+    out.push(arr.splice(0, chunkSize));
+  }
+  out.at(-1).concat(arr);
+
+  return out;
+}
+
 // deals a card from each side stack into it's respective discard pile
 // if side stacks are empty, discard piles are combined, shuffled,
 // and split, then a new card is played from each side stack
-function dealSideStack(){
+  function dealSideStack(){
   // check if at game start or if player's a hand has a valid play
-  let validPlay = gameState.discardPiles.stack1.topCard != undefined && (isPlayable(gameState.player1Hand) || isPlayable(gameState.player2Hand));
+  let validPlay = gameState.players.some(p => isPlayable(p.hand));
 
   // if validPlay is false, draw a card from the side piles
   if (!validPlay){
-    // check if side piles are empty, combine, shuffle and split discard piles and play the top card if so
-    if (gameState.sidePiles.stack1.length == 0 || gameState.sidePiles.stack2.length == 0){
-      let tempStack = gameState.discardPiles.stack1.history.concat(gameState.discardPiles.stack2.history);
-      tempStack = shuffle(tempStack);
+    // check if side piles are empty; if so combine, shuffle and split discard piles
+    if (gameState.sidePiles.some(d => d.length == 0)){
+      let pile = [];
+      gameState.sidePiles.forEach(d => pile.concat(d.splice(0)));
+      gameState.discardPiles.forEach(d => pile.concat(d.splice(0)));
 
-      gameState.sidePiles.stack1 = tempStack.splice(Math.ceil(tempStack.length/2));
-      gameState.sidePiles.stack2 = tempStack;
+      shuffle(pile);
 
-      gameState.discardPiles.stack1 = {topCard: null, history: []};
-      gameState.discardPiles.stack2 = {topCard: null, history: []};
+      partition(pile, gameState.sidePiles.length).forEach((d, i) => {
+        gameState.sidePiles[i] = d;
+      });
     }
 
-    gameState.discardPiles.stack1.topCard = gameState.sidePiles.stack1.pop();
-    gameState.discardPiles.stack1.history.push(gameState.discardPiles.stack1.topCard);
-    gameState.discardPiles.stack2.topCard = gameState.sidePiles.stack2.pop();
-    gameState.discardPiles.stack2.history.push(gameState.discardPiles.stack2.topCard);
+    gameState.sidePiles.map((d, i) => {
+      gameState.discardPiles[i] = [d.pop()];
+    })
   }
+}
+
+function initGameState(name1, name2){
+  let deck = SUITS.reduce((acc, cur) => acc.concat(cur.map(s => new Array(13).fill().map((_, n) => ({suit: s, number: n + 1})))));
+  shuffle(deck)
+
+  gameState.players = [name1, name2].map(name => ({name, hand: deck.splice(0, 5), deck: deck.splice(0, 15)}));
+  gameState.sidePiles = [deck.splice(5), deck.splice(5)];
+
+  dealSideStack();
 }
 
 
