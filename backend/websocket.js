@@ -3,7 +3,7 @@ const WebSocket = require("ws");
 
 const connectedPlayers = [];
 
-let gameState = [
+let gameState = 
   {
     players: [
       { player: null
@@ -24,8 +24,7 @@ let gameState = [
     playedCard: null,
     playedStack: null,
     playerName: null,
-  },
-];
+  };
 
 // main web socket function
 function websocket(server) {
