@@ -16,19 +16,19 @@ let gameState = {
 
 function parseGameState(name){
   let playerIndex = gameState.players.findIndex(p => p.name == name);
-  if(player < 0) return JSON.stringify({type: "error", error: `error: player '${name}' not found!`});
+  if(playerIndex < 0) return JSON.stringify({type: "error", error: `error: player '${name}' not found!`});
 
   let out = {
     hand: gameState.players[playerIndex].hand,
     otherHandCount: gameState.players[(playerIndex + 1) % 2].hand.length,
-    
+
     deckCount: gameState.players.map(p => p.deck.length),
     sideCount: gameState.sidePiles.map(d => d.length),
 
     discardTops: gameState.discardPiles.map(d => d.at(-1)),
   };
 
-  if(player > 0){
+  if(playerIndex > 0){
     out.deckCount.reverse();
   }
 
@@ -60,8 +60,8 @@ function websocket(server) {
           connectedPlayers.set(data.player, ws);
 
           // send current game state to player
-          if (!reconnect && connectedPlayers.length == 2) {
-            initGameState(connectedPlayers.values().slice(2));
+          if (!reconnect && connectedPlayers.size == 2) {
+            initGameState(...[...connectedPlayers.keys()].slice(0, 2));
 
             updateAll();
           }
@@ -109,7 +109,7 @@ function websocket(server) {
 
 function validPlay(card1, card2){
   if(card1?.number == undefined || card2?.number == undefined) return false;
-  
+
   return Math.abs(card1.number - card2.number) % 13 === 1;
 }
 
@@ -132,11 +132,11 @@ function shuffle(arr) {
 function partition(arr, chunkSize){
   arr = arr.slice();
   let out = [];
-  
+
   for(let i = 0; i < arr.len; i += chunkSize){
     out.push(arr.splice(0, chunkSize));
   }
-  out.at(-1).concat(arr);
+  out.push(arr);
 
   return out;
 }
@@ -170,8 +170,8 @@ function partition(arr, chunkSize){
 }
 
 function initGameState(name1, name2){
-  let deck = SUITS.reduce((acc, cur) => acc.concat(cur.map(s => new Array(13).fill().map((_, n) => ({suit: s, number: n + 1})))));
-  shuffle(deck)
+  let deck = SUITS.reduce((acc, s) => acc.concat(new Array(13).fill().map((_, n) => ({suit: s, number: n + 1}))), []);
+  shuffle(deck);
 
   gameState.players = [name1, name2].map(name => ({name, hand: deck.splice(0, 5), deck: deck.splice(0, 15)}));
   gameState.sidePiles = [deck.splice(5), deck.splice(5)];

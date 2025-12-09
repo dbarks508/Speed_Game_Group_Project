@@ -40,7 +40,7 @@ export default function Waiting() {
         setMessage((prevMessage) => [...prevMessage, data.message]);
 
         // two players have been added
-        if (data.action === "speed") {
+        if (data.type === "update") {
           // clear dots interval
           clearInterval(intevalRef.current);
 

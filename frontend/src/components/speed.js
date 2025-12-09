@@ -11,7 +11,7 @@ export default function Speed() {
 
   const [gameState, setGameState] = useState(undefined);
 
-  const player = new URLSearchParams(window.location.search).get('playerName');
+  const player = new URLSearchParams(window.location.search).get("playerName");
 
 
   function send(data){
@@ -42,7 +42,7 @@ export default function Speed() {
         }
 
         // end the game if end game msg is sent
-        if (msg.action === "end") {
+        if (msg.type === "end") {
           console.log("Game ended, navigating to scores...");
           setTimeout(() => navigate("/dashboard"), 5_000);
         }
