@@ -40,7 +40,18 @@ function websocket(server) {
   const wss = new WebSocket.Server({ server });
 
   function updateAll(){
-    gameState.players.map(p => p.name).forEach(n => connectedPlayers.get(n).send(parseGameState(n)));
+    gameState.players.map(p => SendToPlayer(p.name, parseGameState(p.name)));
+  }
+
+  function SendToPlayer(name, data){
+    let conns = connectedPlayers.get(name);
+    if(conns == undefined || conns.length == 0) return false;
+
+    let prev = conns.length;
+    conns = conns.filter(c => c.readyState != WebSocket.CLOSED);
+    connectedPlayers.set(name, conns);
+
+    conns.forEach(c => c.send(data));
   }
 
   // ----- main web socket logic -----
@@ -57,7 +68,10 @@ function websocket(server) {
           if(data.player == undefined) return;
 
           let reconnect = connectedPlayers.has(data.player);
-          connectedPlayers.set(data.player, ws);
+          if(!reconnect){
+            connectedPlayers.set(data.player, []);
+          }
+          connectedPlayers.get(data.player).push(ws);
 
           // send current game state to player
           if (!reconnect && connectedPlayers.size == 2) {
@@ -76,14 +90,14 @@ function websocket(server) {
           if(player == undefined || data.card == undefined || data.discardPile == undefined) return;
 
           // ensure player actually has the card
-          let cardIndex = player.hand.findIndex(({suit, number}) => suit == card.suit && number == card.number);
+          let cardIndex = player.hand.findIndex(({suit, number}) => suit == data.card.suit && number == data.card.number);
           if(cardIndex < 0) return;
 
           // ensure the play is legal
-          if(!validPlay(card, discardPile[data.discardPile].at(-1))) return;
+          if(!validPlay(data.card, gameState.discardPiles[data.discardPile].at(-1))) return;
 
           // 'compute' the play
-          discardPile[data.discardPile].push(card);
+          gameState.discardPiles[data.discardPile].push(data.card);
           player.hand.splice(cardIndex, 1);
           if(player.deck.length > 0){
             player.hand.push(player.deck.pop());
@@ -113,9 +127,11 @@ function validPlay(card1, card2){
   return Math.abs(card1.number - card2.number) % 13 === 1;
 }
 
-function isPlayable(hand){
-  hand.some((card) => {
-    return gameState.discardPiles.some(d => d.length > 0 && validPlay(card.number, d.at(-1)));
+function isPlayable(){
+  return gameState.players.some(p => {
+    return p.hand.some((card) => {
+      return gameState.discardPiles.some(d => d.length > 0 && validPlay(card, d.at(-1)));
+    });
   });
 }
 
@@ -144,29 +160,36 @@ function partition(arr, chunkSize){
 // deals a card from each side stack into it's respective discard pile
 // if side stacks are empty, discard piles are combined, shuffled,
 // and split, then a new card is played from each side stack
-  function dealSideStack(){
-  // check if at game start or if player's a hand has a valid play
-  let validPlay = gameState.players.some(p => isPlayable(p.hand));
-
+function dealSideStack(){
   // if validPlay is false, draw a card from the side piles
-  if (!validPlay){
-    // check if side piles are empty; if so combine, shuffle and split discard piles
-    if (gameState.sidePiles.some(d => d.length == 0)){
-      let pile = [];
-      gameState.sidePiles.forEach(d => pile.concat(d.splice(0)));
-      gameState.discardPiles.forEach(d => pile.concat(d.splice(0)));
+  for(let i = 0; i < 1_000; i++){
+    if (!isPlayable()){
+      console.log("no valid play");
 
-      shuffle(pile);
+      // check if side piles are empty; if so combine, shuffle and split discard piles
+      if (gameState.sidePiles.some(d => d.length == 0)){
+        console.log("shuffling into sidepiles");
 
-      partition(pile, gameState.sidePiles.length).forEach((d, i) => {
-        gameState.sidePiles[i] = d;
+        let pile = [];
+        gameState.sidePiles.forEach(d => pile.concat(d.splice(0)));
+        gameState.discardPiles.forEach(d => pile.concat(d.splice(0)));
+
+        shuffle(pile);
+
+        partition(pile, gameState.sidePiles.length).forEach((d, i) => {
+          gameState.sidePiles[i] = d;
+        });
+      }
+
+      gameState.sidePiles.map((d, i) => {
+        gameState.discardPiles[i] = [d.pop()];
       });
-    }
 
-    gameState.sidePiles.map((d, i) => {
-      gameState.discardPiles[i] = [d.pop()];
-    })
+      continue;
+    }else return;
   }
+
+  console.log("ERROR: `dealSideStack` was unable to get a playable game within 1,000 attempts");
 }
 
 function initGameState(name1, name2){
@@ -174,7 +197,7 @@ function initGameState(name1, name2){
   shuffle(deck);
 
   gameState.players = [name1, name2].map(name => ({name, hand: deck.splice(0, 5), deck: deck.splice(0, 15)}));
-  gameState.sidePiles = [deck.splice(5), deck.splice(5)];
+  gameState.sidePiles = [deck.splice(0, 6), deck.splice(0, 6)];
 
   dealSideStack();
 }

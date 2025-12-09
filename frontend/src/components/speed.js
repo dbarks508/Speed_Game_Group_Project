@@ -23,7 +23,8 @@ export default function Speed() {
       console.log("speed.js connected");
 
       // request gamedata
-      websocket.send(JSON.stringify({type: "update", player}))
+      websocket.send(JSON.stringify({type: "join", player}));
+      websocket.send(JSON.stringify({type: "update", player}));
     };
 
     // handle message
