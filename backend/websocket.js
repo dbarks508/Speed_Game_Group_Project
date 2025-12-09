@@ -105,7 +105,9 @@ function websocket(server) {
 
           // has the game ended?
           if(player.hand.length == 0){
-            let loser = gameState.players.at(gameState.players.findIndex(name => name == player.name) - 1);
+            sendToAll(parseGameState);
+
+            let loser = gameState.players.at(gameState.players.findIndex(({name}) => name == player.name) - 1);
             let cardCount = loser.hand.length + loser.deck.length;
 
             sendToAll(name => {
