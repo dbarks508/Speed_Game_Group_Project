@@ -127,6 +127,9 @@ function websocket(server) {
         }
 
         if (data.type === "playerAction") {
+          // abort if player has not actually taken an action
+          if(gameState.playedCard == undefined) return;
+
           // compare the current card to the stack being played on
           // if the played card is one higher or lower than the top card of the played stack, allow play
           if (validPlay(gameState.playedCard, gameState.playedStack.topCard)) {
