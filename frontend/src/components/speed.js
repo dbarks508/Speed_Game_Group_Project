@@ -65,9 +65,23 @@ export default function Speed() {
           dealCards(shuffledDeck);
           console.log("cards dealt");
 
-          //dealSideStack();
 
-          sendGameStateToServer(websocket);
+          const queryString = window.location.search;
+          const params = new URLSearchParams(queryString);
+          console.log("in send game state");
+          const gameState = {
+          players: players,
+          player1Hand: player1Hand,
+          player2Hand: player2Hand,
+          player1Deck: player1Deck,
+          player2Deck: player2Deck,
+          sideStacks: sideStacks,
+          playedStack: playedStack,
+          playedCard: playedCard,
+          playerName: params.get('playerName'),
+    };
+
+          sendGameStateToServer(gameState);
         }
 
         // end the game if end game msg is sent
