@@ -35,10 +35,13 @@ function PileComponent({cards, revealed, filterDrop, onDrop, isDragable}){
 			className="pile"
 
 			onDragOver={(e) => {
-				let data = getData(e);
-				if(data == undefined) return;
+				const KEY = "cardvalue";
 
-				if(filterDrop == undefined || filterDrop(data.suit, data.number)){
+				let data = e.dataTransfer.types.find(t => t.startsWith(KEY));
+				if(data == undefined) return;
+				data = Number(data.slice(KEY.length));
+
+				if(filterDrop == undefined || filterDrop(undefined, data)){
 					e.preventDefault();
 				}
 			}}
@@ -87,7 +90,9 @@ function CardComponent({suit, number, revealed, isDragable, onDrop}){
 				}
 
 				if(isDragable && !abort){
-					e.dataTransfer.setData("json", JSON.stringify({suit, number}));
+					let data = JSON.stringify({suit, number});
+					e.dataTransfer.setData("json", data);
+					e.dataTransfer.setData(`cardvalue${number}`, "");
 				}else{
 					e.preventDefault();
 				}
