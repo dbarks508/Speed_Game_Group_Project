@@ -39,19 +39,17 @@ function parseGameState(name){
 function websocket(server) {
   const wss = new WebSocket.Server({ server });
 
-  function updateAll(){
-    gameState.players.map(p => SendToPlayer(p.name, parseGameState(p.name)));
-  }
-
-  function SendToPlayer(name, data){
+  function sendToPlayer(name, data){
     let conns = connectedPlayers.get(name);
     if(conns == undefined || conns.length == 0) return false;
 
-    let prev = conns.length;
     conns = conns.filter(c => c.readyState != WebSocket.CLOSED);
     connectedPlayers.set(name, conns);
 
     conns.forEach(c => c.send(data));
+  }
+  function sendToAll(callback){
+    gameState.players.map(p => sendToPlayer(p.name, callback(p.name)));
   }
 
   // ----- main web socket logic -----
@@ -77,7 +75,7 @@ function websocket(server) {
           if (!reconnect && connectedPlayers.size == 2) {
             initGameState(...[...connectedPlayers.keys()].slice(0, 2));
 
-            updateAll();
+            sendToAll(parseGameState);
           }
         }
 
@@ -103,9 +101,25 @@ function websocket(server) {
             player.hand.push(player.deck.pop());
           }
 
-          dealSideStack();
+          // has the game ended?
+          if(player.hand.length == 0){
+            let loser = gameState.players.at(gameState.players.find(name => name == player.name) - 1);
+            sendToAll(name => {
+              let msg = {
+                type: "end",
+                losingCardsLeft: loser.hand.length + loser.deck.length,
+                win: name == player.name,
+              };
 
-          updateAll();
+              return JSON.stringify(msg);
+            });
+
+            connectedPlayers.clear();
+          }else{
+            dealSideStack();
+            sendToAll(parseGameState);
+          }
+
         }
       } catch (err) {
         console.error(err);
@@ -175,6 +189,7 @@ function dealSideStack(){
         let pile = [];
         gameState.sidePiles.forEach(d => pile.concat(d.splice(0)));
         gameState.discardPiles.forEach(d => pile.concat(d.splice(0)));
+        console.log(pile.length);
 
         shuffle(pile);
 

@@ -40,6 +40,8 @@ export default function Speed() {
 
         // end the game if end game msg is sent
         if (msg.type === "end") {
+          postScores(msg);
+
           console.log("Game ended, navigating to scores...");
           setTimeout(() => navigate("/dashboard"), 5_000);
         }
@@ -71,36 +73,23 @@ export default function Speed() {
 
   if(gameState == undefined) return (<div>Loading...</div>);
 
+  async function postScores(msg) {
+    const stats = {
+      name: player,
+      win: msg.win,
+      losingCardsLeft: msg.losingHandCount,
+    };
 
+    const response = await fetch(`http://${document.location.hostname}:4000/postScores`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(stats),
+    });
 
-  // use if necesssary
-  // // determine if this player is the host
-  // function isHost() {
-  //   if (!data || !players.length) return false;
-  //   const currPlayer = players.find((p) => p.player === data.player);
-  //   return currPlayer && currPlayer.role === "host";
-  // }
-  //   async function postScores() {
-  //     const stats = {
-  //       userID: "todo",
-  //       Name: players[0],
-  //       phraseGuessed: "",
-  //       numberOfGuesses: 0,
-  //       fromDatabaseOrCustom: "todo",
-  //       successfulOrNot: "todo",
-  //     };
-
-  //     const response = await fetch(`http://${document.location.hostname}:4000/postScores`, {
-  //       method: "POST",
-  //       credentials: "include",
-  //       headers: { "Content-Type": "application/json" },
-  //       body: JSON.stringify(stats),
-  //     });
-
-  //     if (!response.ok) {
-  //       console.log("error posting scores");
-  //     }
-  //   }
+    if (!response.ok) {
+      console.log("error posting scores");
+    }
+  }
 
 
   function validateDrop(discardIndex) {
