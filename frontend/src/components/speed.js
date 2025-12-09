@@ -234,14 +234,14 @@ export default function Speed() {
     const params = new URLSearchParams(queryString);
     console.log("in send game state");
     const gameState = {
-      players,
-      player1Hand,
-      player2Hand,
-      player1Deck,
-      player2Deck,
-      sideStacks,
-      playedStack,
-      playedCard,
+      players: players,
+      player1Hand: player1Hand,
+      player2Hand: player2Hand,
+      player1Deck: player1Deck,
+      player2Deck: player2Deck,
+      sideStacks: sideStacks,
+      playedStack: playedStack,
+      playedCard: playedCard,
       playerName: params.get('playerName'),
     };
 
@@ -397,9 +397,6 @@ export default function Speed() {
               number={c.number}
               revealed={true}
               isDragable={true}
-              onDrop={
-                playedCard = {suit, number}
-              }
             />
           ))}
         </div>
