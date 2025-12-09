@@ -66,22 +66,7 @@ export default function Speed() {
           console.log("cards dealt");
 
 
-          const queryString = window.location.search;
-          const params = new URLSearchParams(queryString);
-          console.log("in send game state");
-          const gameState = {
-          players: players,
-          player1Hand: player1Hand,
-          player2Hand: player2Hand,
-          player1Deck: player1Deck,
-          player2Deck: player2Deck,
-          sideStacks: sideStacks,
-          playedStack: playedStack,
-          playedCard: playedCard,
-          playerName: params.get('playerName'),
-    };
-
-          sendGameStateToServer(gameState);
+          sendGameStateToServer(websocket);
         }
 
         // end the game if end game msg is sent
@@ -186,7 +171,7 @@ export default function Speed() {
       sideStacks.stack2.length > 0
     ) {
       console.log("sending over game state");
-      sendGameStateToServer(ws, init);
+      sendGameStateToServer(ws);
       setInit(false);
     }
   }, [
