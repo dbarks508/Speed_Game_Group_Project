@@ -1,5 +1,7 @@
 const WebSocket = require("ws");
 
+const dbo = require("./db/conn");
+
 const SUITS = ["clubs", "diamonds", "hearts", "spades"];
 
 const connectedPlayers = new Map();
@@ -103,15 +105,16 @@ function websocket(server) {
 
           // has the game ended?
           if(player.hand.length == 0){
-            let loser = gameState.players.at(gameState.players.find(name => name == player.name) - 1);
-            sendToAll(name => {
-              let msg = {
-                type: "end",
-                losingCardsLeft: loser.hand.length + loser.deck.length,
-                win: name == player.name,
-              };
+            let loser = gameState.players.at(gameState.players.findIndex(name => name == player.name) - 1);
+            let cardCount = loser.hand.length + loser.deck.length;
 
-              return JSON.stringify(msg);
+            sendToAll(name => {
+              dbo.getDB().collection("game_data").insertOne({name, winner: name == player.name, cardCount}).catch(err => {
+                console.error("error when writing to db");
+                console.error(err);
+              });
+
+              return JSON.stringify({type: "end"});
             });
 
             connectedPlayers.clear();

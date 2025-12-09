@@ -40,8 +40,6 @@ export default function Speed() {
 
         // end the game if end game msg is sent
         if (msg.type === "end") {
-          postScores(msg);
-
           console.log("Game ended, navigating to scores...");
           setTimeout(() => navigate("/dashboard"), 5_000);
         }
@@ -72,24 +70,6 @@ export default function Speed() {
   }, [errorMessage]);
 
   if(gameState == undefined) return (<div>Loading...</div>);
-
-  async function postScores(msg) {
-    const stats = {
-      name: player,
-      win: msg.win,
-      losingCardsLeft: msg.losingHandCount,
-    };
-
-    const response = await fetch(`http://${document.location.hostname}:4000/postScores`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(stats),
-    });
-
-    if (!response.ok) {
-      console.log("error posting scores");
-    }
-  }
 
 
   function validateDrop(discardIndex) {

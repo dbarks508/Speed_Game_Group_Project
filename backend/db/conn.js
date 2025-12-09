@@ -23,8 +23,8 @@ module.exports = {
         console.log(
           "Pinged your deployment. You successfully connected to MongoDB!"
         );
-        _db = client.db("hangman");
-        console.log("Successfully connected to the hangman collection.");
+        _db = client.db("speed");
+        console.log("Successfully connected to the speed database.");
       } finally {
         // Ensures that the client will close when you finish/error
         //console.log("Closing the client");
