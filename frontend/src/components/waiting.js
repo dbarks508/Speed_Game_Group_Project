@@ -48,7 +48,7 @@ export default function Waiting() {
 
           // nav to hangman
           setTimeout(() => {
-            navigate("/speed");
+            navigate(`/speed?playerName=${playerName}`);
           }, 3000);
         }
       } catch (err) {
