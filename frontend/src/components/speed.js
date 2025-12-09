@@ -41,7 +41,13 @@ export default function Speed() {
         // end the game if end game msg is sent
         if (msg.type === "end") {
           console.log("Game ended, navigating to scores...");
-          setTimeout(() => navigate("/dashboard"), 5_000);
+          setTimeout(() => {
+            if (player) {
+              navigate (`/dashboard?name=${encodeURIComponent(player)}`);
+            } else {
+              navigate("/dashboard");
+            }
+          }, 5_000);
         }
 
         // handle errors
