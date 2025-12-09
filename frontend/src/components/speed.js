@@ -14,10 +14,6 @@ export default function Speed() {
   const player = new URLSearchParams(window.location.search).get("playerName");
 
 
-  function send(data){
-    ws.send(JSON.stringify({...data, player}));
-  }
-
   // use effect
   useEffect(() => {
     const websocket = new WebSocket(`ws://${document.location.hostname}:4000`);
@@ -27,7 +23,7 @@ export default function Speed() {
       console.log("speed.js connected");
 
       // request gamedata
-      send({type: "update"});
+      websocket.send(JSON.stringify({type: "update", player}))
     };
 
     // handle message
@@ -70,9 +66,11 @@ export default function Speed() {
 
   useEffect(() => {
     if(errorMessage != undefined && errorMessage.length > 0) alert(errorMessage);
-  }, [errorMessage])
+  }, [errorMessage]);
 
-  
+  if(gameState == undefined) return (<div>Loading...</div>);
+
+
 
   // use if necesssary
   // // determine if this player is the host
@@ -114,7 +112,7 @@ export default function Speed() {
       if (!gameState.hand.some(({suit: s, number: n}) => s == suit && n == number)) return;
       if (!validateDrop(discardIndex)(suit, number)) return;
 
-      send({type: "play", card, discardPile: discardIndex});
+      ws.send(JSON.stringify({type: "play", card, discardPile: discardIndex, player}))
     };
   }
 
@@ -123,8 +121,8 @@ export default function Speed() {
       {/* first column */}
       <div style={{ display: "flex", alignItems: "flex-end" }}>
         <div className="deck">
-          <p>{gameState.decks[1].length} cards remaining</p>
-          {gameState.decks[1].length > 0 ? <CardComponent /> : <PileComponent filterDrop={() => false}/>}
+          <p>{gameState.deckCount[1]} cards remaining</p>
+          {gameState.deckCount[1] > 0 ? <CardComponent /> : <PileComponent filterDrop={() => false}/>}
         </div>
       </div>
 
@@ -146,21 +144,21 @@ export default function Speed() {
 
         {/* middle row */}
         <div>
-          <PileComponent filterDrop={() => false} cards={gameState.sidePiles[0].length > 0 ? [{}]:[]} />
+          <PileComponent filterDrop={() => false} cards={gameState.sideCount[0] > 0 ? [{}]:[]} />
           <PileComponent
             filterDrop={validateDrop(0)}
             onDrop={onDiscard(0)}
             revealed={true}
-            cards={[gameState.discardTops[0]]}
+            cards={gameState.discardTops[0] != undefined ? [gameState.discardTops[0]]:[]}
           />
 
           <PileComponent
             filterDrop={validateDrop(1)}
             onDrop={onDiscard(1)}
             revealed={true}
-            cards={[gameState.discardTops[1]]}
+            cards={gameState.discardTops[1] != undefined ? [gameState.discardTops[1]]:[]}
           />
-          <PileComponent filterDrop={() => false} cards={gameState.sidePiles[1].length > 0 ? [{}]:[]} />
+          <PileComponent filterDrop={() => false} cards={gameState.sideCount[1] > 0 ? [{}]:[]} />
         </div>
 
         {/* last row */}
@@ -180,8 +178,8 @@ export default function Speed() {
       {/* last column */}
       <div>
         <div className="deck">
-          {gameState.decks[0].length > 0 ? <CardComponent /> : <PileComponent filterDrop={() => false}/>}
-          <p>{gameState.decks[0].length} cards remaining</p>
+          {gameState.deckCount[0] > 0 ? <CardComponent /> : <PileComponent filterDrop={() => false}/>}
+          <p>{gameState.deckCount[0]} cards remaining</p>
         </div>
       </div>
     </div>
