@@ -3,12 +3,19 @@ import "./dashboard.css";
 
 export default function Dashboard() {
   const [leaderboardData, setLeaderboardData] = useState([]);
+  const [searchName, setSearchName] = useState("");
 
   // Fetch Leaderboard Data on Load
   useEffect(() => {
-    async function getLeaderboard() {
+    async function getLeaderboard(nameFilter = "") {
       try {
-        const response = await fetch(`http://${document.location.hostname}:4000/leaderboard`, {
+        // If a name is provided, add to the URL
+        let url = `http://${document.location.hostname}:4000/leaderboard`;
+        if (nameFilter) {
+          url += `?name=${encodeURIComponent(nameFilter)}`;
+        }
+        
+        const response = await fetch(url, {
           method: "GET",
           credentials: "include",
         });
@@ -23,27 +30,42 @@ export default function Dashboard() {
       }
     }
 
-    getLeaderboard();
+    const searchParams = new URLSearchParams(window.location.search);
+    const nameFromUrl = searchParams.get("name");
+
+    if (nameFromUrl) {
+      setSearchName(nameFromUrl);
+      getLeaderboard(nameFromUrl);
+    } else {
+      getLeaderboard();
+    }
   }, []);
+
+  // Calculating totals:
+  const totalWins = leaderboardData.reduce((sum, game) => sum + (game.Wins || 0), 0);
+  const totalLosses = leaderboardData.reduce((sum, game) => sum + (game.Losses || 0), 0);
 
   return (
     <div className="background">
       <div className="container">
         <header className="header">
           <h1>Game Leaderboard</h1>
-          <p>Ranked by least guesses</p>
+          <p>Ranked by Cards Remaining (Highest First)</p>
+
+          <div style={{ marginTopo: "1rem", fontSize: "1.2rem", fontWeight: "bold"}}>
+             {searchName ? `Overall Stats for ${searchName}:` : `Overall Stats for __Player__: ${searchName}`}
+             <span style ={{ color: "#4caf50", marginLeft: "10px" }}>Wins: {totalWins}</span>
+             <span style ={{ color: "#f44336", marginLeft: "20px" }}>Losses: {totalLosses}</span>
+          </div>
         </header>
 
         {/* Main Content */}
         <section className="dashboard-content">
           <div className="table-container">
             <div className="table-header-row">
-              <div className="col">Rank</div>
-              <div className="col">Player Name</div>
-              <div className="col">Phrase</div>
-              <div className="col">Source</div>
-              <div className="col">Status</div>
-              <div className="col text-right">Guesses</div>
+              <div className="col">Name</div>
+              <div className="col">Win/Loss</div>
+              <div className="col text-right">Num of Cards Remaining for Losing Player</div>
             </div>
 
             <div className="table-body">
@@ -56,20 +78,15 @@ export default function Dashboard() {
                 // Getting data and assigning it to the leaderboard rows
                 leaderboardData.map((game, index) => (
                   <div className="table-row" key={index}>
-                    <div className="col">
-                      <span className="rank-badge">#{index + 1}</span>
-                    </div>
                     <div className="col">{game.Name}</div>
-                    <div className="col">{game.phraseGuessed}</div>
                     <div className="col">
-                      <span className="tag">{game.fromDatabaseOrCustom}</span>
+                      {game.Wins > 0 ? (
+                        <span style={{ color: "#4caf50", fontWeight: "bold" }}>Win</span>
+                      ) : (
+                        <span style={{ color: "#f44336", fontWeight: "bold" }}>Loss</span>
+                      )}
                     </div>
-                    <div className="col">
-                      {game.successfulOrNot ? "Success" : "Failed"}
-                    </div>
-                    <div className="col text-right font-large">
-                      {game.numberOfGuesses}
-                    </div>
+                    <div className="col text-right">{game.numCardsRemaining}</div>
                   </div>
                 ))
               )}
